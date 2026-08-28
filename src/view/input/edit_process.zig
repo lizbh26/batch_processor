@@ -16,19 +16,31 @@ const process_fields = [_][]const u8{ "ID", "Nombre del usuario", "Operación", 
 const NUMBER_OF_FIELDS = process_fields.len;
 
 const INPUT_HEIGHT = 3;
+const ERROR_LABEL_HEIGHT = 2;
 const FieldInputWithLabelWidget = struct {
+    alloc: std.mem.Allocator,
+
     label_view: TextView,
     label_buffer: TextView.Buffer,
 
     input: TextInput,
     focused: bool,
 
+    error_view: TextView,
+    error_buffer: TextView.Buffer,
+
     pub fn init(alloc: std.mem.Allocator, label: []const u8) !*FieldInputWithLabelWidget {
         const self = try alloc.create(FieldInputWithLabelWidget);
+
+        self.alloc = alloc;
 
         self.label_view = .{};
         self.label_buffer = TextView.Buffer{};
         try self.label_buffer.append(alloc, .{ .bytes = label });
+
+        self.error_view = .{};
+        self.error_buffer = TextView.Buffer{};
+        try self.error_buffer.updateStyle(alloc, .{ .style = .{ .fg = .{ .rgb = .{ 255, 0, 0 } }, .blink = true }, .begin = 0, .end = 1024 });
 
         self.input = TextInput.init(alloc);
         self.focused = false;
@@ -47,14 +59,29 @@ const FieldInputWithLabelWidget = struct {
         self.focused = false;
     }
 
-    pub fn draw(self: *FieldInputWithLabelWidget, win: vaxis.Window) void {
+    pub fn draw(self: *FieldInputWithLabelWidget, win: vaxis.Window, error_text: []const u8) !void {
         const label_width: u16 = MAX_CHARS_FOR_LABELS + 2;
 
-        const label_child = win.child(.{ .x_off = 0, .y_off = 0, .width = label_width, .height = win.height });
+        const label_child = win.child(.{ .x_off = 0, .y_off = 1, .width = label_width, .height = 1 });
         self.label_view.draw(label_child, self.label_buffer);
 
-        const input_child = win.child(.{ .x_off = label_width, .y_off = 0, .width = win.width - label_width, .height = win.height, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = if (self.focused) 255 else 56 } } } });
+        const input_error_wrapper = win.child(.{ .x_off = label_width, .y_off = 0, .width = win.width - label_width, .height = INPUT_HEIGHT + ERROR_LABEL_HEIGHT });
+        input_error_wrapper.hideCursor();
+
+        const input_child = input_error_wrapper.child(.{ .y_off = 1, .width = input_error_wrapper.width, .height = INPUT_HEIGHT - 1, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = if (self.focused) 255 else 56 } } } });
         self.input.draw(input_child);
+
+        if (error_text.len > 0) {
+            const error_child = input_error_wrapper.child(.{ .y_off = INPUT_HEIGHT, .width = input_error_wrapper.width, .height = ERROR_LABEL_HEIGHT });
+            error_child.hideCursor();
+
+            self.error_buffer.clear(self.alloc);
+            try self.error_buffer.append(self.alloc, .{ .bytes = error_text });
+
+            self.error_view.draw(error_child, self.error_buffer);
+        }
+
+        win.hideCursor();
     }
 };
 
@@ -91,14 +118,31 @@ pub const EditProcessWidget = struct {
 
     pub fn handle_input(self: *EditProcessWidget, key: vaxis.Key) !void {
         self.active_field_idx = @min(self.active_field_idx, NUMBER_OF_FIELDS - 1);
-        try self.inputs[self.active_field_idx].handle_input(key);
+
+        self.inputs[self.active_field_idx].unfocus();
+        if (key.matches(vaxis.Key.up, .{})) {
+            self.active_field_idx = if (self.active_field_idx == 0) NUMBER_OF_FIELDS - 1 else self.active_field_idx - 1;
+        } else if (key.matches(vaxis.Key.down, .{})) {
+            self.active_field_idx = if (self.active_field_idx == NUMBER_OF_FIELDS - 1) 0 else self.active_field_idx + 1;
+        } else if (key.matches(vaxis.Key.enter, .{})) {
+            if (self.active_field_idx == NUMBER_OF_FIELDS - 1) {
+                // do things here
+            } else {
+                self.active_field_idx += 1;
+            }
+        } else {
+            try self.inputs[self.active_field_idx].handle_input(key);
+        }
+
+        self.inputs[self.active_field_idx].focus();
     }
 
-    pub fn draw(self: *EditProcessWidget, win: Window) void {
+    pub fn draw(self: *EditProcessWidget, win: Window) !void {
+        const child_height = INPUT_HEIGHT + ERROR_LABEL_HEIGHT;
         for (self.inputs, 0..) |input, i| {
-            const clamped_offset: i17 = @intCast(@min(INPUT_HEIGHT * i, @as(usize, std.math.maxInt(i17))));
-            const child = win.child(.{ .x_off = 1, .y_off = clamped_offset, .width = win.width - 2, .height = INPUT_HEIGHT });
-            input.draw(child);
+            const clamped_offset: i17 = @intCast(@min(child_height * i, @as(usize, std.math.maxInt(i17))));
+            const child = win.child(.{ .x_off = 1, .y_off = clamped_offset, .width = win.width - 2, .height = child_height });
+            try input.draw(child, "this is a test error message");
         }
     }
 };

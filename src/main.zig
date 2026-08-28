@@ -72,7 +72,7 @@ pub fn main(init: std.process.Init) !void {
         // the old and only updated cells will be drawn
         win.clear();
 
-        process_editor.draw(win);
+        try process_editor.draw(win);
 
         try vx.render(writer);
         try writer.flush();
