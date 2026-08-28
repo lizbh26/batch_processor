@@ -1,71 +1,80 @@
 const std = @import("std");
-const Io = std.Io;
+const vaxis = @import("vaxis");
 
-const batch_processor = @import("batch_processor");
+const EditProcessWidget = @import("view/input/edit_process.zig");
+
+const Event = union(enum) {
+    key_press: vaxis.Key,
+    winsize: vaxis.Winsize,
+    focus_in,
+};
 
 pub fn main(init: std.process.Init) !void {
-    // Prints to stderr, unbuffered, ignoring potential errors.
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-
-    // This is appropriate for anything that lives as long as the process.
-    const arena: std.mem.Allocator = init.arena.allocator();
-
-    // Accessing command line arguments:
-    const args = try init.minimal.args.toSlice(arena);
-    for (args) |arg| {
-        std.log.info("arg: {s}", .{arg});
-    }
-
-    // In order to do I/O operations need an `Io` instance.
     const io = init.io;
+    const alloc = init.gpa;
 
-    // Stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_file_writer: Io.File.Writer = .init(.stdout(), io, &stdout_buffer);
-    const stdout_writer = &stdout_file_writer.interface;
+    // Initialize a tty
+    var buffer: [1024]u8 = undefined;
+    var tty = try vaxis.Tty.init(io, &buffer);
+    defer tty.deinit();
+    const writer = tty.writer();
 
-    try batch_processor.printAnotherMessage(stdout_writer);
+    var vx = try vaxis.init(io, alloc, init.environ_map, .{
+        .kitty_keyboard_flags = .{ .report_events = true },
+    });
+    defer vx.deinit(alloc, tty.writer());
 
-    try stdout_writer.flush(); // Don't forget to flush!
-}
+    var loop: vaxis.Loop(Event) = .init(io, &tty, &vx);
 
-test "simple test" {
-    const gpa = std.testing.allocator;
-    var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(gpa); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(gpa, 42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
+    try loop.start();
+    defer loop.stop();
 
-test "fuzz example" {
-    try std.testing.fuzz({}, testOne, .{});
-}
+    try vx.enterAltScreen(writer);
+    try vx.setMouseMode(writer, true);
 
-fn testOne(context: void, smith: *std.testing.Smith) !void {
-    _ = context;
-    // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
+    // Sends queries to terminal to detect certain features. This should
+    // _always_ be called, but is left to the application to decide when
+    try vx.queryTerminal(tty.writer(), .fromSeconds(1));
 
-    const gpa = std.testing.allocator;
-    var list: std.ArrayList(u8) = .empty;
-    defer list.deinit(gpa);
-    while (!smith.eos()) switch (smith.value(enum { add_data, dup_data })) {
-        .add_data => {
-            const slice = try list.addManyAsSlice(gpa, smith.value(u4));
-            smith.bytes(slice);
-        },
-        .dup_data => {
-            if (list.items.len == 0) continue;
-            if (list.items.len > std.math.maxInt(u32)) return error.SkipZigTest;
-            const len = smith.valueRangeAtMost(u32, 1, @min(32, list.items.len));
-            const off = smith.valueRangeAtMost(u32, 0, @intCast(list.items.len - len));
-            try list.appendSlice(gpa, list.items[off..][0..len]);
-            try std.testing.expectEqualSlices(
-                u8,
-                list.items[off..][0..len],
-                list.items[list.items.len - len ..],
-            );
-        },
-    };
+    const process_editor = try EditProcessWidget.EditProcessWidget.init(alloc);
+    defer process_editor.deinit(alloc);
+
+    // The main event loop. Vaxis provides a thread safe, blocking, buffered
+    // queue which can serve as the primary event queue for an application
+    while (true) {
+        // nextEvent blocks until an event is in the queue
+        const event = try loop.nextEvent();
+        // log.debug("event: {}", .{event});
+        // exhaustive switching ftw. Vaxis will send events if your Event
+        // enum has the fields for those events (ie "key_press", "winsize")
+        switch (event) {
+            .key_press => |key| {
+                if (key.matches('c', .{ .ctrl = true })) {
+                    break;
+                } else if (key.matches('l', .{ .ctrl = true })) {
+                    vx.queueRefresh();
+                } else {
+                    try process_editor.handle_input(key);
+                }
+            },
+
+            .winsize => |ws| try vx.resize(alloc, tty.writer(), ws),
+            else => {},
+        }
+
+        // vx.window() returns the root window. This window is the size of the
+        // terminal and can spawn child windows as logical areas. Child windows
+        // cannot draw outside of their bounds
+        const win = vx.window();
+
+        // Clear the entire space because we are drawing in immediate mode.
+        // vaxis double buffers the screen. This new frame will be compared to
+        // the old and only updated cells will be drawn
+        win.clear();
+
+        process_editor.draw(win);
+
+        try vx.render(writer);
+        try writer.flush();
+    }
 }
