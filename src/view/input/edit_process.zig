@@ -5,6 +5,7 @@ const vxfw = vaxis.vxfw;
 const Window = vaxis.Window;
 
 const Arena = std.heap.ArenaAllocator;
+const usize_to = @import("~").utils.usize_to;
 
 const Process = @import("~").Process;
 
@@ -35,7 +36,7 @@ pub const EditProcessWidget = struct {
         errdefer self.arena.deinit();
 
         for (process_fields, 0..) |label, i| {
-            self.inputs[i] = try Input.InputWithLabelWidget.init(self.arena.allocator(), label, &sample_validator);
+            self.inputs[i] = try Input.InputWithLabelWidget.init(self.arena.allocator(), .{ .label = label, .validatorFn = &sample_validator, .maxLabelSize = MAX_CHARS_FOR_LABELS, .maxInputSize = 50 });
         }
         self.active_field_idx = 0;
 
@@ -74,10 +75,10 @@ pub const EditProcessWidget = struct {
 
     pub fn draw(self: *EditProcessWidget, win: Window) !void {
         for (self.inputs, 0..) |input, i| {
-            const minimum_y_offset = @min(Input.TOTAL_HEIGHT * i, @as(usize, std.math.maxInt(i17)));
+            const y_offset = usize_to(u16, Input.TOTAL_HEIGHT * i);
 
-            const child = win.child(.{ .x_off = 1, .y_off = @intCast(minimum_y_offset), .width = win.width - 2, .height = Input.TOTAL_HEIGHT });
-            try input.draw(child, MAX_CHARS_FOR_LABELS + 2);
+            const child = win.child(.{ .x_off = 1, .y_off = @intCast(y_offset), .width = win.width - 2, .height = Input.TOTAL_HEIGHT });
+            try input.draw(child);
         }
     }
 };

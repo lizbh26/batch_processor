@@ -74,6 +74,8 @@ pub fn main(init: std.process.Init) !void {
 
         try process_editor.draw(win);
 
+        win.hideCursor();
+
         try vx.render(writer);
         try writer.flush();
     }
