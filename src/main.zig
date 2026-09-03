@@ -1,13 +1,13 @@
 const std = @import("std");
 const vaxis = @import("vaxis");
 
-const EditProcessWidget = @import("view/input/edit_process.zig");
-
 const Event = union(enum) {
     key_press: vaxis.Key,
     winsize: vaxis.Winsize,
     focus_in,
 };
+
+const InputOrchestratorWidget = @import("view/input/input_orchestrator.zig").InputOrchestratorWidget;
 
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
@@ -36,8 +36,8 @@ pub fn main(init: std.process.Init) !void {
     // _always_ be called, but is left to the application to decide when
     try vx.queryTerminal(tty.writer(), .fromSeconds(1));
 
-    const process_editor = try EditProcessWidget.EditProcessWidget.init(alloc);
-    defer process_editor.deinit(alloc);
+    const input_orchestrator = try InputOrchestratorWidget.init(alloc);
+    defer input_orchestrator.deinit(alloc);
 
     // The main event loop. Vaxis provides a thread safe, blocking, buffered
     // queue which can serve as the primary event queue for an application
@@ -54,7 +54,7 @@ pub fn main(init: std.process.Init) !void {
                 } else if (key.matches('l', .{ .ctrl = true })) {
                     vx.queueRefresh();
                 } else {
-                    try process_editor.handle_input(key);
+                    try input_orchestrator.handle_input(key);
                 }
             },
 
@@ -72,7 +72,7 @@ pub fn main(init: std.process.Init) !void {
         // the old and only updated cells will be drawn
         win.clear();
 
-        try process_editor.draw(win);
+        try input_orchestrator.draw(win);
 
         win.hideCursor();
 
