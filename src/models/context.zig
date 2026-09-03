@@ -14,4 +14,9 @@ pub const ExecutionContext = struct {
 
         return self;
     }
+
+    pub fn deinit(self: *ExecutionContext, alloc: std.mem.Allocator) void {
+        alloc.free(self.batches);
+        alloc.destroy(self);
+    }
 };

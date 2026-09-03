@@ -49,8 +49,9 @@ pub const ContextBootstrapperWidget = struct {
     }
 
     pub fn draw(self: *ContextBootstrapperWidget, win: Window) !void {
-        try self.inputList.draw(win);
         if (self.inputList.isDone) self.isDone = true;
+
+        try self.inputList.draw(win);
     }
 
     pub fn extractContext(self: *ContextBootstrapperWidget, extern_alloc: std.mem.Allocator) !*ExecutionContext {

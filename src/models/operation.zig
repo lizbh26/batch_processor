@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const Operand = enum { sum, diff, product, division, remainder };
 pub const Operation = struct {
     a: i32 = 0,
@@ -12,5 +14,18 @@ pub const Operation = struct {
             .remainder => return self.a % self.b,
         }
         return 0;
+    }
+
+    pub fn toString(self: *Operation, alloc: std.mem.Allocator) ![]const u8 {
+        const operand: u8 =
+            switch (self.operand) {
+                .sum => '+',
+                .diff => '-',
+                .product => 'x',
+                .division => '/',
+                .remainder => '%',
+            };
+
+        return try std.fmt.allocPrint(alloc, "{d} {c} {d}", .{ self.a, operand, self.b });
     }
 };
