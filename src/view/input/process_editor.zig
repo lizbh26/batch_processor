@@ -7,7 +7,7 @@ const Window = vaxis.Window;
 const Arena = std.heap.ArenaAllocator;
 const usize_to = @import("~").utils.usize_to;
 
-const Process = @import("~").Process;
+const Process = @import("~").models.Process;
 
 const Input = @import("components/input_with_label.zig");
 
@@ -36,7 +36,7 @@ pub const EditProcessWidget = struct {
         errdefer self.arena.deinit();
 
         for (process_fields, 0..) |label, i| {
-            self.inputs[i] = try Input.InputWithLabelWidget.init(self.arena.allocator(), .{ .label = label, .validatorFn = &sample_validator, .maxLabelSize = MAX_CHARS_FOR_LABELS, .maxInputSize = 50 });
+            self.inputs[i] = try Input.InputWithLabelWidget.init(self.arena.allocator(), .{ .label = label, .validatorFn = &sample_validator, .maxLabelSize = MAX_CHARS_FOR_LABELS, .maxInputSize = 50, .type = .text });
         }
         self.active_field_idx = 0;
 
