@@ -7,17 +7,18 @@ const ExecutionContext = models.Context.ExecutionContext;
 const Process = models.Process.Process;
 
 const Window = vaxis.Window;
+const Label = @import("../components/label.zig").LabelWidget;
 const ProcessCardWidget = @import("components/process_card.zig").ProcessCard;
 
 const usize_to = @import("~").utils.usize_to;
 
 const ProcessShorthand = struct { p: *Process, b: usize };
 
-const MAX_CARDS_TO_SHOW = 5;
-
 pub const CompletedProcessesWidget = struct {
     arena: Arena,
     ctx: *ExecutionContext,
+
+    title: *Label,
     cards: []*ProcessCardWidget,
 
     pub fn init(extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) !*CompletedProcessesWidget {
@@ -25,10 +26,13 @@ pub const CompletedProcessesWidget = struct {
         self.arena = Arena.init(extern_alloc);
         self.ctx = ctx;
 
-        self.cards = try self.arena.allocator().alloc(*ProcessCardWidget, MAX_CARDS_TO_SHOW);
+        const alloc = self.arena.allocator();
+
+        self.title = try Label.init(alloc);
+        self.cards = try alloc.alloc(*ProcessCardWidget, self.ctx.process_count);
 
         for (0..self.cards.len) |i| {
-            self.cards[i] = try ProcessCardWidget.init(self.arena.allocator());
+            self.cards[i] = try ProcessCardWidget.init(alloc, .completed);
         }
 
         return self;
@@ -43,7 +47,7 @@ pub const CompletedProcessesWidget = struct {
     }
 
     fn getLatestCompleted(self: *CompletedProcessesWidget) ![]?ProcessShorthand {
-        var completed = try self.arena.allocator().alloc(?ProcessShorthand, MAX_CARDS_TO_SHOW);
+        var completed = try self.arena.allocator().alloc(?ProcessShorthand, self.ctx.current_process_idx);
         var head: usize = 0;
 
         const batches = self.ctx.batches.len;
@@ -73,23 +77,33 @@ pub const CompletedProcessesWidget = struct {
     }
 
     pub fn draw(self: *CompletedProcessesWidget, win: Window) !void {
-        const CARD_HEIGHT = 5;
+        const alloc = self.arena.allocator();
 
         const processes = try self.getLatestCompleted();
-        defer self.arena.allocator().free(processes);
+        defer alloc.free(processes);
+
+        const plural_S = if (self.ctx.current_process_idx == 1) "" else "s";
+        try self.title.changeText(try std.fmt.allocPrint(alloc, "{d} proceso{s} terminado{s}", .{ self.ctx.current_process_idx, plural_S, plural_S }));
+        const titleWidth = usize_to(u16, self.title.getWidth());
+        const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
+        self.title.draw(titleChild);
+
         var i: usize = 0;
+        var y_off: u16 = 1;
 
         for (processes) |process| {
             const card = self.cards[i];
             if (process == null) {
                 break;
             }
-            try card.updateProcess(self.arena.allocator(), process.?.p, process.?.b);
+            try card.updateProcess(alloc, process.?.p, process.?.b);
 
-            const child = win.child(.{ .x_off = 0, .y_off = usize_to(i17, CARD_HEIGHT * i), .width = win.width, .height = CARD_HEIGHT });
+            const height = card.getHeight();
+            const child = win.child(.{ .x_off = @divTrunc((win.width - card.getWidth()), 2), .y_off = y_off, .width = card.getWidth(), .height = height });
             card.draw(child);
 
             i += 1;
+            y_off += height;
         }
         for (i..self.cards.len) |_| {
             self.cards[i].process = null;

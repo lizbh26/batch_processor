@@ -13,7 +13,7 @@ pub const Process = struct {
         self.tt_ms = 0;
     }
 
-    pub fn isDone(_: *Process) bool {
-        return true; //TODO: check time taken vs time estimated to check doneness
+    pub fn isDone(self: *Process) bool {
+        return self.tme_ms <= self.tt_ms;
     }
 };
