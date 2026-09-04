@@ -57,7 +57,7 @@ pub const ClockWidget = struct {
     }
 
     pub fn getWidth(self: *ClockWidget) u16 {
-        return usize_to(u16, self.label.getText().len + 1);
+        return usize_to(u16, self.label.getWidth());
     }
     pub fn draw(self: *ClockWidget, win: Window) void {
         self.label.draw(win);
