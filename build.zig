@@ -71,6 +71,13 @@ pub fn build(b: *std.Build) void {
     });
     exe_mod.addImport("vaxis", vaxis.module("vaxis"));
 
+    // add zeit dependency to module
+    const zeit = b.dependency("zeit", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    exe_mod.addImport("zeit", zeit.module("zeit"));
+
     // Here we define an executable. An executable needs to have a root module
     // which needs to expose a `main` function. While we could add a main function
     // to the module defined above, it's sometimes preferable to split business
@@ -162,6 +169,4 @@ pub fn build(b: *std.Build) void {
     //
     // Lastly, the Zig build system is relatively simple and self-contained,
     // and reading its source code will allow you to master it.
-
-    exe.root_module.addImport("vaxis", vaxis.module("vaxis"));
 }
