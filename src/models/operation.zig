@@ -5,6 +5,8 @@ pub const Operation = struct {
     a: i32 = 0,
     b: i32 = 0,
     operand: Operand = Operand.sum,
+    result: ?i32,
+
     pub fn calculate(self: *Operation) i32 {
         switch (self.operand) {
             .sum => return self.a + self.b,
@@ -16,7 +18,7 @@ pub const Operation = struct {
         return 0;
     }
 
-    pub fn toString(self: *Operation, alloc: std.mem.Allocator) ![]const u8 {
+    pub fn toString(self: *Operation, alloc: std.mem.Allocator, displayResult: bool) ![]const u8 {
         const operand: u8 =
             switch (self.operand) {
                 .sum => '+',
@@ -26,6 +28,16 @@ pub const Operation = struct {
                 .remainder => '%',
             };
 
-        return try std.fmt.allocPrint(alloc, "{d} {c} {d}", .{ self.a, operand, self.b });
+        var op = try std.fmt.allocPrint(alloc, "{d} {c} {d}", .{ self.a, operand, self.b });
+        if (displayResult and self.result != null) {
+            const res = try std.fmt.allocPrint(alloc, " = {d}", .{self.result.?});
+            defer alloc.free(res);
+
+            const prevMem = (&op).*;
+            defer alloc.free(prevMem);
+
+            op = try std.mem.concat(alloc, u8, &.{ op, res });
+        }
+        return op;
     }
 };
