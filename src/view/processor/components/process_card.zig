@@ -43,10 +43,10 @@ pub const ProcessCard = struct {
     }
 
     pub fn deinit(self: *ProcessCard, alloc: std.mem.Allocator) void {
-        self.idLabel.deinit(alloc);
-        self.batchLabel.deinit(alloc);
-        self.opLabel.deinit(alloc);
-        self.timeLabel.deinit(alloc);
+        self.idLabel.deinit();
+        self.batchLabel.deinit();
+        self.opLabel.deinit();
+        self.timeLabel.deinit();
         alloc.destroy(self);
     }
 

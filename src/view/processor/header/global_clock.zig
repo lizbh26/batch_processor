@@ -27,6 +27,11 @@ pub const ClockWidget = struct {
         return self;
     }
 
+    pub fn deinit(self: *ClockWidget, alloc: std.mem.Allocator) void {
+        self.label.deinit();
+        alloc.destroy(self);
+    }
+
     pub fn tick(self: *ClockWidget, now: zeit.Instant) !void {
         const diffNano = now.timestamp - self.start.timestamp;
         const diff = zeit.instant(.{ .unix_nano = diffNano }, &zeit.utc).time();

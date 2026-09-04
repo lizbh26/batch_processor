@@ -27,6 +27,12 @@ pub const Header = struct {
         return self;
     }
 
+    pub fn deinit(self: *Header, alloc: std.mem.Allocator) void {
+        self.clockWidget.deinit(alloc);
+        self.arena.deinit();
+        alloc.destroy(self);
+    }
+
     pub fn tick(self: *Header, now: zeit.Instant) !void {
         try self.clockWidget.tick(now);
     }

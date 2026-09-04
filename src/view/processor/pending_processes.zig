@@ -63,7 +63,7 @@ pub const PendingProcessesWidget = struct {
             pending[i] = p;
 
             i += 1;
-            if (i == MAX_CARDS_TO_SHOW) break;
+            if (i >= pending.len) break;
         }
         while (i < pending.len) {
             pending[i] = null;

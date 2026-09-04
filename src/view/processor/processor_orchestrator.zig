@@ -18,14 +18,17 @@ const PendingProcessesPanelWidget = @import("pending_processes.zig").PendingProc
 const CompletedProcessesPanelWidget = @import("completed_processes.zig").CompletedProcessesWidget;
 
 pub const ProcessorOrchestratorWidget = struct {
+    arena: Arena,
     ctx: *ExecutionContext,
 
     header: *Header,
     pendingProcessesPanel: *PendingProcessesPanelWidget,
     completedProcessesPanel: *CompletedProcessesPanelWidget,
 
-    pub fn init(alloc: std.mem.Allocator, io: std.Io) !*ProcessorOrchestratorWidget {
-        const self = try alloc.create(ProcessorOrchestratorWidget);
+    pub fn init(extern_alloc: std.mem.Allocator, io: std.Io) !*ProcessorOrchestratorWidget {
+        const self = try extern_alloc.create(ProcessorOrchestratorWidget);
+        self.arena = Arena.init(extern_alloc);
+        const alloc = self.arena.allocator();
 
         self.ctx = try mockCtx(alloc);
         self.header = try Header.init(alloc, io);
@@ -36,8 +39,7 @@ pub const ProcessorOrchestratorWidget = struct {
     }
 
     pub fn deinit(self: *ProcessorOrchestratorWidget, alloc: std.mem.Allocator) void {
-        alloc.destroy(self.ctx);
-        alloc.destroy(self.pendingProcessesPanel);
+        self.arena.deinit();
         alloc.destroy(self);
     }
 
