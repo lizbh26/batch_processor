@@ -32,7 +32,7 @@ pub const ProcessorOrchestratorWidget = struct {
         self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
 
-        self.ctx = try mockCtx(alloc);
+        self.ctx = try mockCtx(alloc, 3);
         self.header = try Header.init(alloc, io);
         self.pendingProcessesPanel = try PendingProcessesPanelWidget.init(alloc, self.ctx);
         self.currentProcessPanel = try CurrentProcessExecutionPanelWidget.init(alloc, self.ctx);
