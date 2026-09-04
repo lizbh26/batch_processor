@@ -7,14 +7,14 @@ const vaxis = @import("vaxis");
 const vxfw = vaxis.vxfw;
 const Window = vaxis.Window;
 
-const ClockWidget = @import("global_clock.zig").ClockWidget;
+const TimerWidget = @import("timer.zig").TimerWidget;
 
 const Process = @import("~").models.Process.Process;
 const usize_to = @import("~").utils.usize_to;
 
 pub const Header = struct {
     arena: Arena,
-    clockWidget: *ClockWidget,
+    timerWidget: *TimerWidget,
 
     pub fn init(alloc: std.mem.Allocator, io: std.Io) !*Header {
         const self = try alloc.create(Header);
@@ -22,24 +22,24 @@ pub const Header = struct {
 
         self.arena = Arena.init(alloc);
 
-        self.clockWidget = try ClockWidget.init(self.arena.allocator(), io);
+        self.timerWidget = try TimerWidget.init(self.arena.allocator(), io);
 
         return self;
     }
 
     pub fn deinit(self: *Header, alloc: std.mem.Allocator) void {
-        self.clockWidget.deinit(alloc);
+        self.timerWidget.deinit(alloc);
         self.arena.deinit();
         alloc.destroy(self);
     }
 
-    pub fn tick(self: *Header, now: zeit.Instant) !void {
-        try self.clockWidget.tick(now);
+    pub fn tick(self: *Header, now: zeit.Instant) void {
+        self.timerWidget.tick(now);
     }
 
     pub fn draw(self: *Header, win: Window) !void {
-        const clockWidth = self.clockWidget.getWidth();
-        const clockChild = win.child(.{ .x_off = win.width - clockWidth - 2, .y_off = 0, .width = clockWidth, .height = 1 });
-        self.clockWidget.draw(clockChild);
+        const timerWidth = self.timerWidget.getWidth();
+        const timerChild = win.child(.{ .x_off = win.width - timerWidth - 2, .y_off = 0, .width = timerWidth, .height = 1 });
+        try self.timerWidget.draw(timerChild);
     }
 };
