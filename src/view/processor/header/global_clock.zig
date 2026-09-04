@@ -45,11 +45,15 @@ pub const ClockWidget = struct {
         if (minutes.len == 2) minutes = leftpad(minutes, 1, '0', self.alloc);
         defer self.alloc.free(minutes);
 
-        var seconds: []const u8 = try std.fmt.allocPrint(self.alloc, "{d}", .{diff.second});
-        if (seconds.len == 1) seconds = leftpad(seconds, 1, '0', self.alloc);
+        var seconds: []const u8 = try std.fmt.allocPrint(self.alloc, "{d}.", .{diff.second});
+        if (seconds.len == 2) seconds = leftpad(seconds, 1, '0', self.alloc);
         defer self.alloc.free(seconds);
 
-        try self.label.changeText(try std.mem.concat(self.alloc, u8, &.{ hours, minutes, seconds }));
+        var milliseconds: []const u8 = try std.fmt.allocPrint(self.alloc, "{d}", .{diff.millisecond});
+        if (milliseconds.len < 3) milliseconds = leftpad(milliseconds, 3 - milliseconds.len, '0', self.alloc);
+        defer self.alloc.free(seconds);
+
+        try self.label.changeText(try std.mem.concat(self.alloc, u8, &.{ hours, minutes, seconds, milliseconds }));
     }
 
     pub fn getWidth(self: *ClockWidget) u16 {
