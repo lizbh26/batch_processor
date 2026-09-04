@@ -53,7 +53,9 @@ pub const ProcessorOrchestratorWidget = struct {
     }
 
     pub fn tick(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {
+        if (!self.ctx.isComplete()) {
         try self.header.tick(now);
+        }
         self.currentProcessPanel.tick(now);
     }
 

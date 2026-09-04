@@ -76,7 +76,9 @@ pub const PendingProcessesWidget = struct {
         const pending = try self.getPending(batchIdx);
         defer alloc.free(pending);
 
-        try self.title.changeText(try std.fmt.allocPrint(alloc, "Lote {d} en ejecución", .{batchIdx + 1}));
+        const msg: []const u8 = if (self.ctx.isComplete()) "Sin lotes a ejecutar" else try std.fmt.allocPrint(alloc, "Lote {d} en ejecución", .{batchIdx + 1});
+        try self.title.changeText(msg);
+
         const titleWidth = usize_to(u16, self.title.getWidth());
         const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
         self.title.draw(titleChild);

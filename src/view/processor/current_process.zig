@@ -46,7 +46,7 @@ pub const CurrentProcessExecutionWidget = struct {
     }
 
     pub fn tick(self: *CurrentProcessExecutionWidget, now: zeit.Instant) void {
-        if (!self.running) return;
+        if (!self.running or self.ctx.isComplete()) return;
 
         const timeEllapsedNano = now.timestamp - self.time_start.timestamp;
         const diff = zeit.instant(.{ .unix_nano = timeEllapsedNano }, &zeit.utc).milliTimestamp();
@@ -60,14 +60,20 @@ pub const CurrentProcessExecutionWidget = struct {
         }
     }
     pub fn draw(self: *CurrentProcessExecutionWidget, win: Window) !void {
-        try self.title.changeText(try std.fmt.allocPrint(self.arena.allocator(), "Proceso en ejecución: {d}/{d}", .{ self.ctx.current_process_idx, self.ctx.process_count }));
+        const alloc = self.arena.allocator();
+
+        const msg: []const u8 = if (self.ctx.isComplete()) "Sin procesos a ejecutar" else try std.fmt.allocPrint(alloc, "Proceso en ejecución: {d}/{d}", .{ self.ctx.current_process_idx + 1, self.ctx.process_count });
+        try self.title.changeText(msg);
+
         const titleWidth = usize_to(u16, self.title.getWidth());
         const titleChild = win.child(.{ .x_off = usize_to(i17, @divTrunc((win.width - titleWidth), 2)), .y_off = 0, .width = titleWidth, .height = 1 });
         self.title.draw(titleChild);
 
-        const batchIdx, _ = self.ctx.getBatchAndProcessIdx();
-        try self.card.updateProcess(self.arena.allocator(), self.ctx.getCurrentProcess(), batchIdx);
-        const cardChild = win.child(.{ .x_off = @divTrunc(win.width - self.card.getWidth(), 2), .y_off = 1, .width = win.width - 2, .height = self.card.getHeight() });
-        self.card.draw(cardChild);
+        if (!self.ctx.isComplete()) {
+            const batchIdx, _ = self.ctx.getBatchAndProcessIdx();
+            try self.card.updateProcess(alloc, self.ctx.getCurrentProcess(), batchIdx);
+            const cardChild = win.child(.{ .x_off = @divTrunc(win.width - self.card.getWidth(), 2), .y_off = 1, .width = win.width - 2, .height = self.card.getHeight() });
+            self.card.draw(cardChild);
+        }
     }
 };
