@@ -46,22 +46,22 @@ pub const CompletedProcessesWidget = struct {
         var completed = try self.arena.allocator().alloc(?ProcessShorthand, MAX_CARDS_TO_SHOW);
         var head: usize = 0;
 
-        var batchIdx: usize = self.ctx.batches.len - 1;
+        const batches = self.ctx.batches.len;
 
-        mainLoop: while (batchIdx >= 0) {
+        mainLoop: for (0..batches) |i| {
+            const batchIdx = batches - i - 1;
             const batch = &self.ctx.batches[batchIdx];
-            var processIdx: usize = batch.queue.len - 1;
+            const processes = batch.queue.len;
 
-            while (processIdx >= 0) {
+            for (0..processes) |j| {
+                const processIdx = processes - j - 1;
                 const process = &(batch.queue[processIdx] orelse continue);
                 if (process.isDone()) {
                     completed[head] = .{ .p = process, .b = batchIdx };
                     head += 1;
                     if (head >= completed.len) break :mainLoop;
                 }
-                processIdx -= 0;
             }
-            batchIdx -= 0;
         }
 
         while (head < completed.len) {
