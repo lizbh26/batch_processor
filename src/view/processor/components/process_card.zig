@@ -56,7 +56,11 @@ pub const ProcessCard = struct {
         try self.idLabel.changeText(try std.mem.concat(alloc, u8, &.{ "ID: ", process.id }));
         try self.batchLabel.changeText(try std.fmt.allocPrint(alloc, " Lote {d} ", .{batchIdx}));
         try self.opLabel.changeText(try std.mem.concat(alloc, u8, &.{ "OP: ", try process.operation.toString(alloc, process.isDone()) }));
-        try self.timeLabel.changeText(try std.fmt.allocPrint(alloc, "TME: {d}  TT: {d}  TR: {d}", .{ process.tme, 0, process.tme }));
+
+        const time_estimated = @divTrunc(process.tme_ms, 1000);
+        const time_taken = @divTrunc(process.tt_ms, 1000);
+        const time_remaining = time_estimated - time_taken;
+        try self.timeLabel.changeText(try std.fmt.allocPrint(alloc, "TME: {d}  TT: {d}  TR: {d}", .{ time_estimated, time_taken, time_remaining }));
     }
 
     pub fn draw(self: *ProcessCard, win: Window) void {
