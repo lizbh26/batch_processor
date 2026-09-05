@@ -38,6 +38,7 @@ pub const InputListWidget = struct {
         }
 
         self.active_field_idx = 0;
+        self.getActiveInput().focus();
     }
     pub fn deinit(self: *InputListWidget, alloc: std.mem.Allocator) void {
         for (self.inputs) |input| {
@@ -75,6 +76,7 @@ pub const InputListWidget = struct {
             if (self.active_field_idx > 0) self.active_field_idx -= 1;
         } else if (key.matches(vaxis.Key.enter, .{}) and input.isValid()) {
             self.active_field_idx += 1;
+            if (self.isDone()) return;
         } else {
             try self.inputs[self.active_field_idx].handleInput(key);
         }
