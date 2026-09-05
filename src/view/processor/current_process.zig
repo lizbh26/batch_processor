@@ -70,8 +70,7 @@ pub const CurrentProcessExecutionWidget = struct {
         self.title.draw(titleChild);
 
         if (!self.ctx.isComplete()) {
-            const batchIdx, _ = self.ctx.getBatchAndProcessIdx();
-            try self.card.updateProcess(alloc, self.ctx.getCurrentProcess(), batchIdx);
+            try self.card.updateProcess(alloc, self.ctx.getCurrentProcess());
             const cardChild = win.child(.{ .x_off = @divTrunc(win.width - self.card.getWidth(), 2), .y_off = 1, .width = win.width - 2, .height = self.card.getHeight() });
             self.card.draw(cardChild);
         }

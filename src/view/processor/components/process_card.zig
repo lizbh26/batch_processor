@@ -54,11 +54,11 @@ pub const ProcessCard = struct {
         alloc.destroy(self);
     }
 
-    pub fn updateProcess(self: *ProcessCard, alloc: std.mem.Allocator, process: *Process, batchIdx: usize) !void {
+    pub fn updateProcess(self: *ProcessCard, alloc: std.mem.Allocator, process: *Process) !void {
         self.process = process;
 
         try self.idLabel.changeText(try std.mem.concat(alloc, u8, &.{ "ID: ", process.id }));
-        try self.batchLabel.changeText(try std.fmt.allocPrint(alloc, " Lote {d} ", .{batchIdx + 1}));
+        try self.batchLabel.changeText(try std.fmt.allocPrint(alloc, " Lote {d} ", .{process.batchIdx + 1}));
         try self.opLabel.changeText(try std.mem.concat(alloc, u8, &.{ "OP: ", try process.operation.toString(alloc, process.isDone()) }));
 
         const time_estimated = @divTrunc(process.tme_ms, 1000);

@@ -43,17 +43,18 @@ pub const PendingProcessesWidget = struct {
         alloc.destroy(self);
     }
 
-    fn getPending(self: *PendingProcessesWidget, batchIdx: u16) ![]?*Process {
+    fn getPending(self: *PendingProcessesWidget) ![]?*Process {
         var pending = try self.arena.allocator().alloc(?*Process, MAX_CARDS_TO_SHOW);
         var i: usize = 0;
 
-        for (&self.ctx.batches[batchIdx].queue, 0..) |*process, processIdx| {
+        const batch = self.ctx.getCurrentBatch();
+        _, const currentProcessIdx = self.ctx.getBatchAndProcessIdx();
+
+        for (&batch.queue, 0..) |*process, processIdx| {
             const p: *Process = &(process.* orelse continue);
 
-            const currentBatchIdx, const currentProcessIdx = self.ctx.getBatchAndProcessIdx();
-            if (p.isDone() or (batchIdx == currentBatchIdx and processIdx == currentProcessIdx)) {
+            if (p.isDone() or processIdx == currentProcessIdx)
                 continue;
-            }
 
             pending[i] = p;
 
@@ -72,10 +73,6 @@ pub const PendingProcessesWidget = struct {
         const alloc = self.arena.allocator();
 
         const batchIdx, _ = self.ctx.getBatchAndProcessIdx();
-
-        const pending = try self.getPending(batchIdx);
-        defer alloc.free(pending);
-
         const msg: []const u8 = if (self.ctx.isComplete()) "Sin lotes a ejecutar" else try std.fmt.allocPrint(alloc, "Lote {d} en ejecución", .{batchIdx + 1});
         try self.title.changeText(msg);
 
@@ -83,24 +80,25 @@ pub const PendingProcessesWidget = struct {
         const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
         self.title.draw(titleChild);
 
-        var i: usize = 0;
+        const pending = try self.getPending();
+        defer alloc.free(pending);
+
         var y_off: u16 = 1;
 
-        for (pending) |process| {
-            const p = process orelse break;
-
+        for (pending, 0..) |process, i| {
             const card = self.cards[i];
-            try card.updateProcess(self.arena.allocator(), p, batchIdx);
+
+            const p = process orelse {
+                card.process = null;
+                continue;
+            };
+
+            try card.updateProcess(self.arena.allocator(), p);
 
             const height = card.getHeight();
             const child = win.child(.{ .x_off = @divTrunc(win.width - card.getWidth(), 2), .y_off = y_off, .width = win.width, .height = height });
             card.*.draw(child);
-            i += 1;
             y_off += height;
-        }
-        for (i..self.cards.len) |_| {
-            self.cards[i].process = null;
-            i += 1;
         }
     }
 };
