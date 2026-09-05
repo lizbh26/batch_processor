@@ -84,11 +84,11 @@ pub const InputListWidget = struct {
     }
 
     pub fn draw(self: *InputListWidget, win: Window) !void {
-        for (self.inputs, 0..) |*input, i| {
+        for (0..self.active_field_idx + 1) |i| {
             const y_offset = usize_to(u16, Input.TOTAL_HEIGHT * i);
 
             const child = win.child(.{ .x_off = 1, .y_off = @intCast(y_offset), .width = win.width - 2, .height = Input.TOTAL_HEIGHT });
-            try input.draw(child);
+            try self.inputs[i].draw(child);
         }
     }
 };

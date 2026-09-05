@@ -76,5 +76,7 @@ pub const ProcessorOrchestratorWidget = struct {
 
         const completedProcessesPanelChild = mainContainer.child(.{ .x_off = panelWidth * 2 + 1, .y_off = 0, .width = panelWidth - 2, .height = mainContainer.height });
         try self.completedProcessesPanel.draw(completedProcessesPanelChild);
+
+        win.hideCursor();
     }
 };

@@ -62,15 +62,14 @@ pub const InputWidget = struct {
     }
 
     pub fn handleInput(self: *InputWidget, key: vaxis.Key) !void {
-        if (self.config.maxInputSize) |max_size| {
-            if (self.input.buf.realLength() >= max_size) return;
-        }
-
         if (self.config.type == .number and !Validator.only_numbers(key.text orelse "")) {
             return;
         }
 
         try self.input.update(.{ .key_press = key });
+        if (self.config.maxInputSize != null and self.getInputLength() > self.config.maxInputSize.?) {
+            self.input.deleteBeforeCursor();
+        }
     }
 
     pub fn focus(self: *InputWidget) void {
@@ -82,6 +81,13 @@ pub const InputWidget = struct {
 
     pub fn getInputText(self: *InputWidget, alloc: std.mem.Allocator) []const u8 {
         return self.input.toOwnedContents(alloc) catch "";
+    }
+    pub fn getInputLength(self: *InputWidget) u16 {
+        const alloc = self.arena.allocator();
+        const text = self.getInputText(alloc);
+        defer alloc.free(text);
+
+        return usize_to(u16, text.len);
     }
 
     fn validateInput(self: *InputWidget, alloc: std.mem.Allocator) []const u8 {
@@ -121,7 +127,7 @@ pub const InputWidget = struct {
         var max_input_size = input_error_wrapper.width;
         if (self.config.maxInputSize) |max_size| max_input_size = @min(max_size, max_input_size);
 
-        const input_child = input_error_wrapper.child(.{ .y_off = 1, .width = max_input_size, .height = INPUT_HEIGHT - 1, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = if (self.focused) 255 else 56 } } } });
+        const input_child = input_error_wrapper.child(.{ .y_off = 1, .width = max_input_size + 1, .height = INPUT_HEIGHT - 1, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = if (self.focused) 255 else 56 } } } });
         self.input.draw(input_child);
 
         const alloc = self.arena.allocator();

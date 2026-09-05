@@ -120,7 +120,6 @@ pub const Controller = struct {
         win.clear();
 
         try self.orchestrator.draw(win);
-        win.hideCursor();
 
         try self.vx.render(self.tty.writer());
         try self.tty.writer().flush();

@@ -14,7 +14,7 @@ const InputList = @import("components/input_list.zig");
 const Input = @import("components/input_with_label.zig");
 
 const inputs = [_]Input.WidgetConfig{
-    .{ .label = "Número de procesos", .maxInputSize = 20, .type = .number },
+    .{ .label = "Número de procesos", .maxInputSize = 2, .type = .number },
 };
 
 pub const ContextBootstrapperWidget = struct {
