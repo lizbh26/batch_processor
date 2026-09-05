@@ -38,7 +38,9 @@ pub const MainOrchestrator = struct {
     }
 
     pub fn switchToProcessorPhase(self: *MainOrchestrator, ctx: *ExecutionContext, now: zeit.Instant) !void {
-        self.processorOrchestrator = try ProcessorOrchestratorWidget.init(self.arena.allocator(), ctx, now);
+        const alloc = self.arena.allocator();
+        self.processorOrchestrator = try ProcessorOrchestratorWidget.init(alloc, ctx, now);
+        self.inputOrchestrator.deinit(alloc);
         self.phase = .processor;
     }
 

@@ -49,7 +49,7 @@ pub const Controller = struct {
         self.arena.deinit();
     }
 
-    pub fn start_loop(self: *Controller) !void {
+    pub fn startLoop(self: *Controller) !void {
         try self.loop.start();
         defer self.loop.stop();
 
@@ -57,69 +57,82 @@ pub const Controller = struct {
         const writer = self.tty.writer();
 
         try self.vx.enterAltScreen(writer);
-        try self.vx.setMouseMode(writer, true);
+        try self.vx.setMouseMode(writer, false);
 
         // Sends queries to terminal to detect certain features. This should
         // _always_ be called, but is left to the application to decide when
         try self.vx.queryTerminal(writer, .fromSeconds(1));
 
-        var frameStart = zeit.instant(.{ .now = self.io }, &zeit.utc);
-        var now = frameStart;
+        var frameStart = self.getNow();
 
-        try self.orchestrator.switchToProcessorPhase(try mockCtxInit(alloc, 8), now);
+        try self.orchestrator.switchToProcessorPhase(try mockCtxInit(alloc, 8), frameStart);
 
         // The main event loop. Vaxis provides a thread safe, blocking, buffered
         // queue which can serve as the primary event queue for an application
         while (true) {
-            now = zeit.instant(.{ .now = self.io }, &zeit.utc);
+            const exit = try self.handlePendingEvents();
+            if (exit) break;
 
-            const event = try self.loop.tryEvent();
-            if (event != null) {
-                switch (event.?) {
-                    .key_press => |key| {
-                        if (key.matches('c', .{ .ctrl = true })) {
-                            break;
-                        } else if (key.matches('l', .{ .ctrl = true })) {
-                            self.vx.queueRefresh();
-                        } else {
-                            try self.orchestrator.handleInput(key);
-                        }
-                    },
+            const now = self.getNow();
+            try self.waitRemainingFrameTime(frameStart, now);
+            frameStart = self.getNow();
 
-                    .winsize => |ws| {
-                        try self.vx.resize(alloc, writer, ws);
-                        self.vx.refresh = true;
-                    },
-                    else => {},
-                }
-            } else {
-                const diffFromCurrFrame = now.timestamp - frameStart.timestamp;
-                const totalFrameDiff = FRAME_DURATION.inNanoseconds() catch unreachable;
-
-                const sleepNanos: i96 = @intCast(totalFrameDiff - diffFromCurrFrame);
-                if (sleepNanos > 0) try std.Io.sleep(self.io, .{ .nanoseconds = sleepNanos }, .awake);
-
-                frameStart = zeit.instant(.{ .now = self.io }, &zeit.utc);
-            }
-
-            try self.orchestrator.tick(now);
-
-            // vx.window() returns the root window. This window is the size of the
-            // terminal and can spawn child windows as logical areas. Child windows
-            // cannot draw outside of their bounds
-            const win = self.vx.window();
-
-            // Clear the entire space because we are drawing in immediate mode.
-            // vaxis double buffers the screen. This new frame will be compared to
-            // the old and only updated cells will be drawn
-            win.clear();
-
-            try self.orchestrator.draw(win);
-
-            win.hideCursor();
-
-            try self.vx.render(writer);
-            try writer.flush();
+            try self.orchestrator.tick(frameStart);
+            try self.draw();
         }
+    }
+
+    pub fn handlePendingEvents(self: *Controller) !bool {
+        while (try self.loop.tryEvent()) |event| {
+            switch (event) {
+                .key_press => |key| {
+                    if (key.matches('c', .{ .ctrl = true })) {
+                        return true;
+                    } else if (key.matches('l', .{ .ctrl = true })) {
+                        self.vx.queueRefresh();
+                    } else {
+                        try self.orchestrator.handleInput(key);
+                    }
+                },
+
+                .winsize => |ws| {
+                    try self.vx.resize(self.arena.allocator(), self.tty.writer(), ws);
+                    self.vx.refresh = true;
+                },
+                else => {},
+            }
+        }
+
+        return false;
+    }
+
+    pub fn waitRemainingFrameTime(self: *Controller, begin: zeit.Instant, now: zeit.Instant) !void {
+        const diffFromCurrFrame = now.timestamp - begin.timestamp;
+        const totalFrameDiff = FRAME_DURATION.inNanoseconds() catch unreachable;
+
+        const sleepNanos: i96 = @intCast(totalFrameDiff - diffFromCurrFrame);
+        if (sleepNanos > 0) try std.Io.sleep(self.io, .{ .nanoseconds = sleepNanos }, .awake);
+    }
+
+    pub fn draw(self: *Controller) !void {
+        // vx.window() returns the root window. This window is the size of the
+        // terminal and can spawn child windows as logical areas. Child windows
+        // cannot draw outside of their bounds
+        const win = self.vx.window();
+
+        // Clear the entire space because we are drawing in immediate mode.
+        // vaxis double buffers the screen. This new frame will be compared to
+        // the old and only updated cells will be drawn
+        win.clear();
+
+        try self.orchestrator.draw(win);
+        win.hideCursor();
+
+        try self.vx.render(self.tty.writer());
+        try self.tty.writer().flush();
+    }
+
+    fn getNow(self: *Controller) zeit.Instant {
+        return zeit.instant(.{ .now = self.io }, &zeit.utc);
     }
 };

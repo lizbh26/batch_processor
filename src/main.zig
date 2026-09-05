@@ -7,5 +7,5 @@ pub fn main(init: std.process.Init) !void {
     try controller.init(&init);
     defer controller.deinit();
 
-    try controller.start_loop();
+    try controller.startLoop();
 }
