@@ -28,9 +28,9 @@ pub const ExecutionContext = struct {
 
         var batchIdx, const leftoverProcessCount = self.getBatchAndProcessIdxForGlobalIdx(count);
         if (leftoverProcessCount > 0) batchIdx += 1;
-        self.batches = try alloc.alloc(Batch.Batch, batchIdx + 1);
-        for (0..leftoverProcessCount) |i| {
-            self.batches[batchIdx].queue[Batch.BATCH_SIZE - i - 1] = null;
+        self.batches = try alloc.alloc(Batch.Batch, batchIdx);
+        for (0..Batch.BATCH_SIZE - leftoverProcessCount) |i| {
+            self.batches[batchIdx - 1].queue[Batch.BATCH_SIZE - i - 1] = null;
         }
 
         self.process_count = count;
