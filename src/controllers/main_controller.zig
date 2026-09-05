@@ -6,7 +6,6 @@ const zeit = @import("zeit");
 const Event = union(enum) { key_press: vaxis.Key, winsize: vaxis.Winsize, focus_in };
 
 const MainOrchestrator = @import("../view/main_orchestrator.zig").MainOrchestrator;
-const mockCtxInit = @import("../view/processor/_utils/mock_ctx.zig").createMockContext;
 
 const FRAME_DURATION: zeit.Duration = .{ .microseconds = 16667 }; //60 FPS or 16 ms per frame
 
@@ -32,9 +31,7 @@ pub const Controller = struct {
         self.tty = try vaxis.Tty.init(self.io, &self.buffer);
         errdefer self.tty.deinit();
 
-        self.vx = try vaxis.init(self.io, alloc, init_p.environ_map, .{
-            .kitty_keyboard_flags = .{ .report_events = true },
-        });
+        self.vx = try vaxis.init(self.io, alloc, init_p.environ_map, .{});
 
         errdefer self.vx.deinit(alloc, self.tty.writer());
 
@@ -53,7 +50,6 @@ pub const Controller = struct {
         try self.loop.start();
         defer self.loop.stop();
 
-        const alloc = self.arena.allocator();
         const writer = self.tty.writer();
 
         try self.vx.enterAltScreen(writer);
@@ -64,8 +60,6 @@ pub const Controller = struct {
         try self.vx.queryTerminal(writer, .fromSeconds(1));
 
         var frameStart = self.getNow();
-
-        try self.orchestrator.switchToProcessorPhase(try mockCtxInit(alloc, 8), frameStart);
 
         // The main event loop. Vaxis provides a thread safe, blocking, buffered
         // queue which can serve as the primary event queue for an application
@@ -82,7 +76,7 @@ pub const Controller = struct {
         }
     }
 
-    pub fn handlePendingEvents(self: *Controller) !bool {
+    fn handlePendingEvents(self: *Controller) !bool {
         while (try self.loop.tryEvent()) |event| {
             switch (event) {
                 .key_press => |key| {
@@ -106,7 +100,7 @@ pub const Controller = struct {
         return false;
     }
 
-    pub fn waitRemainingFrameTime(self: *Controller, begin: zeit.Instant, now: zeit.Instant) !void {
+    fn waitRemainingFrameTime(self: *Controller, begin: zeit.Instant, now: zeit.Instant) !void {
         const diffFromCurrFrame = now.timestamp - begin.timestamp;
         const totalFrameDiff = FRAME_DURATION.inNanoseconds() catch unreachable;
 
@@ -114,7 +108,7 @@ pub const Controller = struct {
         if (sleepNanos > 0) try std.Io.sleep(self.io, .{ .nanoseconds = sleepNanos }, .awake);
     }
 
-    pub fn draw(self: *Controller) !void {
+    fn draw(self: *Controller) !void {
         // vx.window() returns the root window. This window is the size of the
         // terminal and can spawn child windows as logical areas. Child windows
         // cannot draw outside of their bounds
