@@ -10,9 +10,7 @@ const Arena = std.heap.ArenaAllocator;
 const usize_to = @import("~").utils.usize_to;
 const leftpad = @import("~").utils.leftpad;
 
-const INPUT_HEIGHT = 3;
-const ERROR_LABEL_HEIGHT = 2;
-pub const TOTAL_HEIGHT = INPUT_HEIGHT + ERROR_LABEL_HEIGHT;
+const MAX_INPUT_SIZE = 50;
 
 const Validator = @import("../utils/validators.zig");
 
@@ -62,10 +60,6 @@ pub const InputWidget = struct {
     }
 
     pub fn handleInput(self: *InputWidget, key: vaxis.Key) !void {
-        if (self.config.type == .number and !Validator.only_numbers(key.text orelse "")) {
-            return;
-        }
-
         try self.input.update(.{ .key_press = key });
         if (self.config.maxInputSize != null and self.getInputLength() > self.config.maxInputSize.?) {
             self.input.deleteBeforeCursor();
@@ -116,25 +110,39 @@ pub const InputWidget = struct {
         return errorText.len == 0;
     }
 
+    fn getInputWidth(self: *InputWidget) u16 {
+        return (self.config.maxInputSize orelse MAX_INPUT_SIZE) + 1;
+    }
+    fn getLabelWidth(self: *InputWidget) u16 {
+        return usize_to(u16, self.fieldLabel.getWidth());
+    }
+    fn getErrorWidth(self: *InputWidget) u16 {
+        return usize_to(u16, self.errorLabel.getWidth());
+    }
+    pub fn getWidth(self: *InputWidget) u16 {
+        return self.getLabelWidth() + 1 + @max(self.getInputWidth(), self.getErrorWidth());
+    }
+    pub fn getHeight(self: *InputWidget) u16 {
+        return if (self.errorLabel.isEmpty()) 2 else 3;
+    }
+
     pub fn draw(self: *InputWidget, win: vaxis.Window) !void {
-        const max_label_size: u16 = usize_to(u16, self.fieldLabel.getWidth());
+        const labelWidth = self.getLabelWidth();
+        const inputWidth = self.getInputWidth();
+        const height = self.getHeight();
 
-        const label_child = win.child(.{ .x_off = 0, .y_off = 1, .width = max_label_size + 1, .height = 1 });
-        self.fieldLabel.draw(label_child);
+        const container = win.child(.{ .y_off = 0, .x_off = 0, .width = self.getWidth(), .height = height });
 
-        const input_error_wrapper = win.child(.{ .x_off = max_label_size + 2, .y_off = 0, .width = win.width - max_label_size, .height = INPUT_HEIGHT + ERROR_LABEL_HEIGHT });
+        const labelChild = container.child(.{ .x_off = 0, .y_off = 0, .width = labelWidth, .height = 1 });
+        self.fieldLabel.draw(labelChild);
 
-        var max_input_size = input_error_wrapper.width;
-        if (self.config.maxInputSize) |max_size| max_input_size = @min(max_size, max_input_size);
+        const inputChild = container.child(.{ .x_off = labelWidth + 1, .y_off = 0, .width = inputWidth, .height = 2, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = if (self.focused) 255 else 56 } } } });
+        self.input.draw(inputChild);
 
-        const input_child = input_error_wrapper.child(.{ .y_off = 1, .width = max_input_size + 1, .height = INPUT_HEIGHT - 1, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = if (self.focused) 255 else 56 } } } });
-        self.input.draw(input_child);
-
-        const alloc = self.arena.allocator();
-        const error_text = self.validateInput(alloc);
-
-        try self.errorLabel.changeText(error_text);
-        const error_child = input_error_wrapper.child(.{ .y_off = INPUT_HEIGHT, .width = input_error_wrapper.width, .height = ERROR_LABEL_HEIGHT });
-        self.errorLabel.draw(error_child);
+        try self.errorLabel.changeText(self.validateInput(self.arena.allocator()));
+        if (!self.errorLabel.isEmpty()) {
+            const errorChild = container.child(.{ .x_off = labelWidth + 1, .y_off = 2, .width = self.getErrorWidth(), .height = 1 });
+            self.errorLabel.draw(errorChild);
+        }
     }
 };

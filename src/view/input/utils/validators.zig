@@ -10,6 +10,12 @@ pub fn only_numbers(str: []const u8) bool {
     }
     return true;
 }
+pub fn not_zero(str: []const u8) bool {
+    for (str) |char| {
+        if (char != '0') return true;
+    }
+    return false;
+}
 
 pub fn validateStringField(str: []const u8) []const u8 {
     if (!required(str)) return "Este campo es requerido";
@@ -18,7 +24,8 @@ pub fn validateStringField(str: []const u8) []const u8 {
 
 pub fn validateNaturalNumberField(str: []const u8) []const u8 {
     if (!required(str)) return "Este campo es requerido";
-    if (!only_numbers(str)) return "Debe de ser un número entero mayor a 0";
+    if (!only_numbers(str)) return "Este campo solo admite digitos";
+    if (!not_zero(str)) return "No puede ser 0";
 
     return "";
 }

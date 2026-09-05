@@ -74,21 +74,34 @@ pub const InputListWidget = struct {
 
         if (key.matches(vaxis.Key.delete, .{}) and input.isEmpty()) {
             if (self.active_field_idx > 0) self.active_field_idx -= 1;
-        } else if (key.matches(vaxis.Key.enter, .{}) and input.isValid()) {
+        } else if (key.matches(vaxis.Key.enter, .{})) {
+            if (!input.isValid()) return;
+
             self.active_field_idx += 1;
             if (self.isDone()) return;
         } else {
-            try self.inputs[self.active_field_idx].handleInput(key);
+            try self.getActiveInput().handleInput(key);
         }
         self.getActiveInput().focus();
     }
 
     pub fn draw(self: *InputListWidget, win: Window) !void {
-        for (0..self.active_field_idx + 1) |i| {
-            const y_offset = usize_to(u16, Input.TOTAL_HEIGHT * i);
+        var y_offset: i17 = 0;
+        var activeChildWindow: Window = undefined;
 
-            const child = win.child(.{ .x_off = 1, .y_off = @intCast(y_offset), .width = win.width - 2, .height = Input.TOTAL_HEIGHT });
-            try self.inputs[i].draw(child);
+        for (0..self.inputs.len) |i| {
+            const input = &self.inputs[i];
+
+            const child = win.child(.{ .x_off = 1, .y_off = y_offset, .width = win.width - 2, .height = input.getHeight() });
+            y_offset += input.getHeight() + 1;
+
+            if (i == self.active_field_idx) {
+                activeChildWindow = child;
+                continue;
+            }
+
+            try input.draw(child);
         }
+        try self.getActiveInput().draw(activeChildWindow);
     }
 };

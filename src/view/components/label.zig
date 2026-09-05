@@ -23,6 +23,9 @@ pub const LabelWidget = struct {
         self.buffer.deinit(self.alloc);
     }
 
+    pub fn isEmpty(self: *LabelWidget) bool {
+        return self.getText().len == 0;
+    }
     pub fn getText(self: *LabelWidget) []const u8 {
         return self.buffer.content.items;
     }
