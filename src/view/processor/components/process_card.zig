@@ -33,16 +33,16 @@ pub const ProcessCard = struct {
     }
 
     pub fn kickstart(self: *ProcessCard, alloc: std.mem.Allocator) !void {
-        self.idLabel = try LabelWidget.init(alloc);
+        try self.idLabel.init(alloc);
         errdefer self.idLabel.deinit();
 
-        self.batchLabel = try LabelWidget.init(alloc);
+        try self.batchLabel.init(alloc);
         errdefer self.batchLabel.deinit();
 
-        self.opLabel = try LabelWidget.init(alloc);
+        try self.opLabel.init(alloc);
         errdefer self.opLabel.deinit();
 
-        self.timeLabel = try LabelWidget.init(alloc);
+        try self.timeLabel.init(alloc);
         errdefer self.timeLabel.deinit();
     }
 

@@ -16,8 +16,8 @@ const usize_to = @import("~").utils.usize_to;
 pub const Header = struct {
     arena: Arena,
 
-    title: *Label,
-    timerWidget: *TimerWidget,
+    title: Label,
+    timerWidget: TimerWidget,
 
     pub fn init(alloc: std.mem.Allocator, now: zeit.Instant) !*Header {
         const self = try alloc.create(Header);
@@ -25,8 +25,8 @@ pub const Header = struct {
 
         self.arena = Arena.init(alloc);
 
-        self.title = try Label.init(alloc);
-        self.timerWidget = try TimerWidget.init(self.arena.allocator(), now);
+        try self.title.init(alloc);
+        try self.timerWidget.init(self.arena.allocator(), now);
 
         return self;
     }

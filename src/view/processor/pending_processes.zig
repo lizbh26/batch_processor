@@ -26,7 +26,7 @@ pub const PendingProcessesWidget = struct {
         self.ctx = ctx;
 
         const alloc = self.arena.allocator();
-        self.title = try Label.init(alloc);
+        try self.title.init(alloc);
         self.cards = try self.arena.allocator().alloc(*ProcessCardWidget, MAX_CARDS_TO_SHOW);
         for (0..self.cards.len) |i| {
             self.cards[i] = try ProcessCardWidget.init(alloc, .pending);

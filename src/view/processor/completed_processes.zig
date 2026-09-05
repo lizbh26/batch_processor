@@ -26,7 +26,7 @@ pub const CompletedProcessesWidget = struct {
 
         const alloc = self.arena.allocator();
 
-        self.title = try Label.init(alloc);
+        try self.title.init(alloc);
         self.cards = try alloc.alloc(*ProcessCardWidget, self.ctx.process_count);
 
         for (0..self.cards.len) |i| {

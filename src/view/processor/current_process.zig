@@ -29,7 +29,7 @@ pub const CurrentProcessExecutionWidget = struct {
         const alloc = self.arena.allocator();
 
         self.ctx = ctx;
-        self.title = try Label.init(alloc);
+        try self.title.init(alloc);
         self.card = try ProcessCardWidget.init(alloc, .doing);
         self.running = false;
 

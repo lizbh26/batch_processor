@@ -14,7 +14,7 @@ pub const InputOrchestratorWidget = struct {
     arena: Arena,
     ctx: ?*ExecutionContext,
 
-    bootstrap_widget: *ContextBootstrapperWidget,
+    bootstrap_widget: ContextBootstrapperWidget,
 
     pub fn init(extern_alloc: std.mem.Allocator) !*InputOrchestratorWidget {
         const self = try extern_alloc.create(InputOrchestratorWidget);
@@ -23,7 +23,7 @@ pub const InputOrchestratorWidget = struct {
         const our_alloc = self.arena.allocator();
         self.ctx = null;
 
-        self.bootstrap_widget = try ContextBootstrapperWidget.init(our_alloc);
+        try self.bootstrap_widget.init(our_alloc);
 
         return self;
     }

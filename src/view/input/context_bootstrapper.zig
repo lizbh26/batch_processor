@@ -19,44 +19,35 @@ const inputs = [_]Input.WidgetConfig{
 
 pub const ContextBootstrapperWidget = struct {
     arena: Arena,
-    inputList: *InputList.InputListWidget,
+    inputList: InputList.InputListWidget,
 
-    isDone: bool,
-
-    pub fn init(extern_alloc: std.mem.Allocator) !*ContextBootstrapperWidget {
-        const self = try extern_alloc.create(ContextBootstrapperWidget);
-        errdefer extern_alloc.destroy(self);
-
+    pub fn init(self: *ContextBootstrapperWidget, extern_alloc: std.mem.Allocator) !void {
         self.arena = Arena.init(extern_alloc);
         errdefer self.arena.deinit();
 
         const our_alloc = self.arena.allocator();
 
-        self.inputList = try InputList.InputListWidget.init(&.{ .alloc = our_alloc, .maxLabelSize = 20, .inputs = &inputs });
-
-        self.isDone = false;
-
-        return self;
+        try self.inputList.init(&.{ .alloc = our_alloc, .maxLabelSize = 20, .inputs = &inputs });
     }
 
     pub fn deinit(self: *ContextBootstrapperWidget, alloc: std.mem.Allocator) void {
         self.arena.deinit(); // Frees all child widgets and buffers
         alloc.destroy(self); // Frees the widget struct itself
     }
-
-    pub fn handle_input(self: *ContextBootstrapperWidget, key: vaxis.Key) !void {
-        try self.inputList.handle_input(key);
-    }
-
-    pub fn draw(self: *ContextBootstrapperWidget, win: Window) !void {
-        if (self.inputList.isDone) self.isDone = true;
-
-        try self.inputList.draw(win);
-    }
-
     pub fn extractContext(self: *ContextBootstrapperWidget, extern_alloc: std.mem.Allocator) !*ExecutionContext {
         const processCountInput = self.inputList.getInputAt(0);
 
-        return try (ExecutionContext).init(extern_alloc, std.fmt.parseInt(u16, processCountInput, 10) catch 0, "lmao");
+        return try ExecutionContext.init(extern_alloc, std.fmt.parseInt(u16, processCountInput, 10) catch unreachable);
+    }
+    pub fn isDone(self: *ContextBootstrapperWidget) bool {
+        return self.inputList.isDone();
+    }
+
+    pub fn handleInput(self: *ContextBootstrapperWidget, key: vaxis.Key) !void {
+        try self.inputList.handleInput(key);
+    }
+
+    pub fn draw(self: *ContextBootstrapperWidget, win: Window) !void {
+        try self.inputList.draw(win);
     }
 };
