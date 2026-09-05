@@ -9,8 +9,10 @@ pub fn createMockContext(alloc: std.mem.Allocator, size: u16) !*ExecutionContext
     mainLoop: for (ctx.batches, 0..) |*batch, bIdx| {
         for (&batch.queue) |*process| {
             if (i >= size) break :mainLoop;
+            const p: *Process = &(process.* orelse unreachable);
+
             i += 1;
-            process.*.?.seed(alloc, .{ .id = i, .batchIdx = bIdx });
+            p.seed(alloc, .{ .id = i, .batchIdx = bIdx });
         }
     }
     return ctx;

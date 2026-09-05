@@ -26,11 +26,11 @@ pub const ExecutionContext = struct {
         self.arena = std.heap.ArenaAllocator.init(extern_alloc);
         const alloc = self.arena.allocator();
 
-        var batchCount, const leftoverProcessCount = self.getBatchAndProcessIdxForGlobalIdx(count);
-        if (leftoverProcessCount > 0) batchCount += 1;
-        self.batches = try alloc.alloc(Batch.Batch, batchCount);
+        var batchIdx, const leftoverProcessCount = self.getBatchAndProcessIdxForGlobalIdx(count);
+        if (leftoverProcessCount > 0) batchIdx += 1;
+        self.batches = try alloc.alloc(Batch.Batch, batchIdx + 1);
         for (0..leftoverProcessCount) |i| {
-            self.batches[batchCount - 1].queue[Batch.BATCH_SIZE - i - 1] = null;
+            self.batches[batchIdx].queue[Batch.BATCH_SIZE - i - 1] = null;
         }
 
         self.process_count = count;
