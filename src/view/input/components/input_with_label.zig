@@ -50,7 +50,7 @@ pub const Widget = struct {
         var padded_label = config.label;
         if (maxLabelSize) |max_size| {
             if (config.label.len < max_size)
-                padded_label = leftpad(config.label, max_size - config.label.len, alloc);
+                padded_label = leftpad(config.label, max_size - config.label.len, ' ', alloc);
         }
 
         self.config = config;

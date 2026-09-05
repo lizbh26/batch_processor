@@ -16,13 +16,13 @@ pub const Header = struct {
     arena: Arena,
     timerWidget: *TimerWidget,
 
-    pub fn init(alloc: std.mem.Allocator, io: std.Io) !*Header {
+    pub fn init(alloc: std.mem.Allocator, now: zeit.Instant) !*Header {
         const self = try alloc.create(Header);
         errdefer alloc.destroy(self);
 
         self.arena = Arena.init(alloc);
 
-        self.timerWidget = try TimerWidget.init(self.arena.allocator(), io);
+        self.timerWidget = try TimerWidget.init(self.arena.allocator(), now);
 
         return self;
     }
@@ -33,8 +33,8 @@ pub const Header = struct {
         alloc.destroy(self);
     }
 
-    pub fn tick(self: *Header, now: zeit.Instant) void {
-        self.timerWidget.tick(now);
+    pub fn tick(self: *Header, now: zeit.Instant) !void {
+        try self.timerWidget.tick(now);
     }
 
     pub fn draw(self: *Header, win: Window) !void {
