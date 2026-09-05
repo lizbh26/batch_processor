@@ -13,7 +13,7 @@ pub const Process = struct {
         self.id = std.fmt.allocPrint(alloc, "{d}", .{data.id}) catch "ID COULD NOT BE GENERATED";
         self.batchIdx = data.batchIdx;
         self.operation = .{ .a = 65, .b = 43, .operand = .sum, .result = -1 };
-        self.tme_ms = 5000;
+        self.tme_ms = 2000;
         self.tt_ms = 0;
     }
 

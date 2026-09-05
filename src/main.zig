@@ -11,11 +11,17 @@ const Event = union(enum) {
 const InputOrchestratorWidget = @import("view/input/input_orchestrator.zig").InputOrchestratorWidget;
 const ProcessorOrchestratorWidget = @import("view/processor/processor_orchestrator.zig").ProcessorOrchestratorWidget;
 
+const mockCtxInit = @import("view/processor/_utils/mock_ctx.zig").createMockContext;
+
 const FRAME_DURATION: zeit.Duration = .{ .microseconds = 16667 }; //60 FPS
 
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
-    const alloc = init.gpa;
+    const global_alloc = init.gpa;
+
+    var global_arena = std.heap.ArenaAllocator.init(global_alloc);
+    defer global_arena.deinit();
+    const alloc = global_arena.allocator();
 
     // Initialize a tty
     var buffer: [1024]u8 = undefined;
@@ -40,7 +46,10 @@ pub fn main(init: std.process.Init) !void {
     // _always_ be called, but is left to the application to decide when
     try vx.queryTerminal(tty.writer(), .fromSeconds(1));
 
-    const orchestrator = try ProcessorOrchestratorWidget.init(alloc, io);
+    const mockCtx = try mockCtxInit(alloc, 8);
+    defer mockCtx.deinit(alloc);
+
+    const orchestrator = try ProcessorOrchestratorWidget.init(alloc, io, mockCtx);
     defer orchestrator.deinit(alloc);
 
     var frameStart = zeit.instant(.{ .now = init.io }, &zeit.utc);

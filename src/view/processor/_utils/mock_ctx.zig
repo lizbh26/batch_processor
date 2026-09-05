@@ -1,19 +1,16 @@
 const std = @import("std");
 const ExecutionContext = @import("~").models.Context.ExecutionContext;
+const Process = @import("~").models.Process.Process;
 
 pub fn createMockContext(alloc: std.mem.Allocator, size: u16) !*ExecutionContext {
     const ctx = try ExecutionContext.init(alloc, size, "Test User");
     var i: u16 = 0;
 
-    for (ctx.batches) |*batch| {
+    mainLoop: for (ctx.batches, 0..) |*batch, bIdx| {
         for (&batch.queue) |*process| {
-            if (process.* == null) continue;
-            if (i < size) {
-                process.*.?.seed(alloc, i + 1);
-            } else {
-                process.* = null;
-            }
+            if (i >= size) break :mainLoop;
             i += 1;
+            process.*.?.seed(alloc, .{ .id = i, .batchIdx = bIdx });
         }
     }
     return ctx;

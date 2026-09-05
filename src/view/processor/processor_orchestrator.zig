@@ -11,8 +11,6 @@ const ExecutionContext = models.Context.ExecutionContext;
 const Arena = std.heap.ArenaAllocator;
 const usize_to = @import("~").utils.usize_to;
 
-const mockCtx = @import("_utils/mock_ctx.zig").createMockContext;
-
 const Header = @import("header/index.zig").Header;
 const PendingProcessesPanelWidget = @import("pending_processes.zig").PendingProcessesWidget;
 const CurrentProcessExecutionPanelWidget = @import("current_process.zig").CurrentProcessExecutionWidget;
@@ -27,12 +25,12 @@ pub const ProcessorOrchestratorWidget = struct {
     currentProcessPanel: *CurrentProcessExecutionPanelWidget,
     completedProcessesPanel: *CompletedProcessesPanelWidget,
 
-    pub fn init(extern_alloc: std.mem.Allocator, io: std.Io) !*ProcessorOrchestratorWidget {
+    pub fn init(extern_alloc: std.mem.Allocator, io: std.Io, ctx: *ExecutionContext) !*ProcessorOrchestratorWidget {
         const self = try extern_alloc.create(ProcessorOrchestratorWidget);
+        self.ctx = ctx;
         self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
 
-        self.ctx = try mockCtx(alloc, 3);
         self.header = try Header.init(alloc, io);
         self.pendingProcessesPanel = try PendingProcessesPanelWidget.init(alloc, self.ctx);
         self.currentProcessPanel = try CurrentProcessExecutionPanelWidget.init(alloc, self.ctx);

@@ -3,6 +3,8 @@ const Batch = @import("batch.zig");
 const Process = @import("process.zig").Process;
 
 pub const ExecutionContext = struct {
+    arena: std.heap.ArenaAllocator,
+
     batches: []Batch.Batch,
     process_count: u16,
     user_name: []const u8,
@@ -19,8 +21,10 @@ pub const ExecutionContext = struct {
         return .{ batchIdx, processIdx };
     }
 
-    pub fn init(alloc: std.mem.Allocator, count: u16, user_name: []const u8) !*ExecutionContext {
-        const self = try alloc.create(ExecutionContext);
+    pub fn init(extern_alloc: std.mem.Allocator, count: u16, user_name: []const u8) !*ExecutionContext {
+        const self = try extern_alloc.create(ExecutionContext);
+        self.arena = std.heap.ArenaAllocator.init(extern_alloc);
+        const alloc = self.arena.allocator();
 
         var batchCount, const leftoverProcessCount = self.getBatchAndProcessIdxForGlobalIdx(count);
         if (leftoverProcessCount > 0) batchCount += 1;
@@ -37,7 +41,7 @@ pub const ExecutionContext = struct {
     }
 
     pub fn deinit(self: *ExecutionContext, alloc: std.mem.Allocator) void {
-        alloc.free(self.batches);
+        self.arena.deinit();
         alloc.destroy(self);
     }
 
