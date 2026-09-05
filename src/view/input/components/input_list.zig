@@ -16,11 +16,11 @@ pub const InputListWidget = struct {
     inputs: []Input.InputWidget,
     active_field_idx: usize,
 
-    pub fn init(self: *InputListWidget, config: *const WidgetConfig) !void {
+    pub fn init(self: *InputListWidget, config: *const WidgetConfig) void {
         self.arena = std.heap.ArenaAllocator.init(config.alloc);
         const alloc = self.arena.allocator();
 
-        self.inputs = try alloc.alloc(Input.InputWidget, config.inputs.len);
+        self.inputs = alloc.alloc(Input.InputWidget, config.inputs.len) catch unreachable;
         for (config.inputs, 0..) |inputConfig, i| {
             try self.inputs[i].init(alloc, config.maxLabelSize, inputConfig);
         }

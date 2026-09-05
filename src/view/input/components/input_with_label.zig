@@ -31,9 +31,9 @@ pub const InputWidget = struct {
 
     config: WidgetConfig,
 
-    pub fn init(self: *InputWidget, extern_alloc: std.mem.Allocator, maxLabelSize: ?u16, config: WidgetConfig) !void {
+    pub fn init(self: *InputWidget, extern_alloc: std.mem.Allocator, maxLabelSize: ?u16, config: WidgetConfig) void {
         self.arena = Arena.init(extern_alloc);
-        errdefer self.arena.deinit();
+
         const alloc = self.arena.allocator();
 
         var padded_label = config.label;
@@ -45,10 +45,10 @@ pub const InputWidget = struct {
         self.config = config;
         self.config.label = padded_label;
 
-        try self.fieldLabel.init(alloc);
-        try self.fieldLabel.changeText(padded_label);
+        self.fieldLabel.init(alloc);
+        self.fieldLabel.changeText(padded_label) catch unreachable;
 
-        try self.errorLabel.init(alloc);
+        self.errorLabel.init(alloc);
 
         self.input = TextInput.init(alloc);
         self.focused = false;

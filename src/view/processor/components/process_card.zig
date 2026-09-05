@@ -12,49 +12,39 @@ const usize_to = @import("~").utils.usize_to;
 const MAX_CARD_WIDTH = 40;
 pub const CardType = enum { pending, doing, completed };
 pub const ProcessCard = struct {
+    arena: std.heap.ArenaAllocator,
+
     process: ?*Process,
     type: CardType,
 
-    idLabel: *LabelWidget,
-    batchLabel: *LabelWidget,
-    opLabel: *LabelWidget,
-    timeLabel: *LabelWidget,
+    idLabel: LabelWidget,
+    batchLabel: LabelWidget,
+    opLabel: LabelWidget,
+    timeLabel: LabelWidget,
 
-    pub fn init(alloc: std.mem.Allocator, cardType: CardType) !*ProcessCard {
-        const self = try alloc.create(ProcessCard);
-        errdefer alloc.destroy(self);
+    pub fn init(self: *ProcessCard, extern_alloc: std.mem.Allocator, cardType: CardType) void {
+        self.arena = std.heap.ArenaAllocator(extern_alloc);
+        const alloc = self.arena.allocator();
 
         self.type = cardType;
 
-        try self.kickstart(alloc);
+        self.idLabel.init(alloc);
+        self.batchLabel.init(alloc);
+
+        self.opLabel.init(alloc);
+
+        self.timeLabel.init(alloc);
         self.process = null;
 
         return self;
     }
 
-    pub fn kickstart(self: *ProcessCard, alloc: std.mem.Allocator) !void {
-        try self.idLabel.init(alloc);
-        errdefer self.idLabel.deinit();
-
-        try self.batchLabel.init(alloc);
-        errdefer self.batchLabel.deinit();
-
-        try self.opLabel.init(alloc);
-        errdefer self.opLabel.deinit();
-
-        try self.timeLabel.init(alloc);
-        errdefer self.timeLabel.deinit();
+    pub fn deinit(self: *ProcessCard) void {
+        self.arena.deinit();
     }
 
-    pub fn deinit(self: *ProcessCard, alloc: std.mem.Allocator) void {
-        self.idLabel.deinit();
-        self.batchLabel.deinit();
-        self.opLabel.deinit();
-        self.timeLabel.deinit();
-        alloc.destroy(self);
-    }
-
-    pub fn updateProcess(self: *ProcessCard, alloc: std.mem.Allocator, process: *Process) !void {
+    pub fn updateProcess(self: *ProcessCard, process: *Process) !void {
+        const alloc = self.arena.allocator();
         self.process = process;
 
         try self.idLabel.changeText(try std.mem.concat(alloc, u8, &.{ "ID: ", process.id }));

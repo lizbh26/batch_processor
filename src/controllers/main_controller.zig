@@ -18,7 +18,7 @@ pub const Controller = struct {
     vx: vaxis.Vaxis,
     loop: vaxis.Loop(Event),
 
-    orchestrator: *MainOrchestrator,
+    orchestrator: MainOrchestrator,
 
     pub fn init(self: *Controller, init_p: *const std.process.Init) !void {
         self.io = init_p.io;
@@ -37,7 +37,7 @@ pub const Controller = struct {
 
         self.loop = .init(self.io, &self.tty, &self.vx);
 
-        self.orchestrator = try MainOrchestrator.init(alloc);
+        self.orchestrator.init(alloc);
     }
 
     pub fn deinit(self: *Controller) void {

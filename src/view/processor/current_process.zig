@@ -18,19 +18,19 @@ pub const CurrentProcessExecutionWidget = struct {
     ctx: *ExecutionContext,
     time_start: zeit.Instant,
 
-    title: *Label,
-    card: *ProcessCardWidget,
+    title: Label,
+    card: ProcessCardWidget,
 
     running: bool,
 
-    pub fn init(extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) !*CurrentProcessExecutionWidget {
+    pub fn init(extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         const self = try extern_alloc.create(CurrentProcessExecutionWidget);
         self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
 
         self.ctx = ctx;
-        try self.title.init(alloc);
-        self.card = try ProcessCardWidget.init(alloc, .doing);
+        self.title.init(alloc);
+        self.card.init(alloc, .doing);
         self.running = false;
 
         return self;
@@ -70,7 +70,7 @@ pub const CurrentProcessExecutionWidget = struct {
         self.title.draw(titleChild);
 
         if (!self.ctx.isComplete()) {
-            try self.card.updateProcess(alloc, self.ctx.getCurrentProcess());
+            try self.card.updateProcess(self.ctx.getCurrentProcess());
             const cardChild = win.child(.{ .x_off = @divTrunc(win.width - self.card.getWidth(), 2), .y_off = 1, .width = win.width - 2, .height = self.card.getHeight() });
             self.card.draw(cardChild);
         }

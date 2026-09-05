@@ -20,8 +20,7 @@ pub const PendingProcessesWidget = struct {
     title: *Label,
     cards: []*ProcessCardWidget,
 
-    pub fn init(extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) !*PendingProcessesWidget {
-        const self = try extern_alloc.create(PendingProcessesWidget);
+    pub fn init(self: *PendingProcessesWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
         self.ctx = ctx;
 
@@ -40,7 +39,6 @@ pub const PendingProcessesWidget = struct {
             card.*.deinit(alloc);
         }
         self.arena.deinit();
-        alloc.destroy(self);
     }
 
     fn getPending(self: *PendingProcessesWidget) ![]?*Process {
@@ -80,7 +78,7 @@ pub const PendingProcessesWidget = struct {
                 continue;
             };
 
-            try card.updateProcess(self.arena.allocator(), p);
+            try card.updateProcess(p);
             n += 1;
 
             const height = card.getHeight();

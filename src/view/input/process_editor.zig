@@ -7,78 +7,44 @@ const Window = vaxis.Window;
 const Arena = std.heap.ArenaAllocator;
 const usize_to = @import("~").utils.usize_to;
 
-const Process = @import("~").models.Process;
+const Process = @import("~").models.Process.Process;
 
+const InputListWidget = @import("components/input_list.zig").InputListWidget;
 const Input = @import("components/input_with_label.zig");
 
-const MAX_CHARS_FOR_LABELS = 18; //update this if largest label changes size
-const process_fields = [_][]const u8{ "ID", "Nombre del usuario", "Operación", "Tiempo estimado" };
-
-const NUMBER_OF_FIELDS = process_fields.len;
-
-fn sample_validator(input: []const u8) []const u8 {
-    if (input.len == 0) return "El campo es requerido";
-    return "";
-}
+const inputs = [_]Input.WidgetConfig{
+    .{ .label = "Nombre del programador", .maxInputSize = 50, .type = .text },
+    .{ .label = "ID del programa", .maxInputSize = 20, .type = .text },
+    .{ .label = "Operación", .maxInputSize = 20, .type = .operation },
+    .{ .label = "Tiempo Máximo Estimado", .maxInputSize = 3, .type = .number },
+};
 
 pub const EditProcessWidget = struct {
     arena: Arena,
 
-    inputs: [NUMBER_OF_FIELDS]*Input.InputWithLabelWidget,
     current_process: *Process,
-    active_field_idx: u8,
+    inputList: InputListWidget,
 
-    pub fn init(alloc: std.mem.Allocator) !*EditProcessWidget {
-        const self = try alloc.create(EditProcessWidget);
-        errdefer alloc.destroy(self);
-
+    pub fn init(self: *EditProcessWidget, alloc: std.mem.Allocator) void {
         self.arena = Arena.init(alloc);
-        errdefer self.arena.deinit();
-
-        for (process_fields, 0..) |label, i| {
-            self.inputs[i] = try Input.InputWithLabelWidget.init(self.arena.allocator(), .{ .label = label, .validatorFn = &sample_validator, .maxLabelSize = MAX_CHARS_FOR_LABELS, .maxInputSize = 50, .type = .text });
-        }
-        self.active_field_idx = 0;
-
-        return self;
+        self.inputList.init(&.{ .alloc = alloc, .inputs = &inputs });
     }
 
-    pub fn deinit(self: *EditProcessWidget, alloc: std.mem.Allocator) void {
-        self.arena.deinit(); // Frees all child widgets and buffers
-        alloc.destroy(self); // Frees the widget struct itself
+    pub fn deinit(self: *EditProcessWidget) void {
+        self.arena.deinit();
     }
 
     pub fn setProcessToEdit(self: *EditProcessWidget, p: *Process) void {
+        if (p == self.current_process) return;
         self.current_process = p;
+        self.inputList.reset();
     }
 
-    pub fn handle_input(self: *EditProcessWidget, key: vaxis.Key) !void {
-        self.active_field_idx = @min(self.active_field_idx, NUMBER_OF_FIELDS - 1);
-
-        self.inputs[self.active_field_idx].unfocus();
-        if (key.matches(vaxis.Key.up, .{})) {
-            self.active_field_idx = if (self.active_field_idx == 0) NUMBER_OF_FIELDS - 1 else self.active_field_idx - 1;
-        } else if (key.matches(vaxis.Key.down, .{})) {
-            self.active_field_idx = if (self.active_field_idx == NUMBER_OF_FIELDS - 1) 0 else self.active_field_idx + 1;
-        } else if (key.matches(vaxis.Key.enter, .{})) {
-            if (self.active_field_idx == NUMBER_OF_FIELDS - 1) {
-                // do things here
-            } else {
-                self.active_field_idx += 1;
-            }
-        } else {
-            try self.inputs[self.active_field_idx].handle_input(key);
-        }
-
-        self.inputs[self.active_field_idx].focus();
+    pub fn handleInput(self: *EditProcessWidget, key: vaxis.Key) !void {
+        try self.inputList.handleInput(key);
     }
 
     pub fn draw(self: *EditProcessWidget, win: Window) !void {
-        for (self.inputs, 0..) |input, i| {
-            const y_offset = usize_to(u16, Input.TOTAL_HEIGHT * i);
-
-            const child = win.child(.{ .x_off = 1, .y_off = @intCast(y_offset), .width = win.width - 2, .height = Input.TOTAL_HEIGHT });
-            try input.draw(child);
-        }
+        try self.inputList.draw(win);
     }
 };

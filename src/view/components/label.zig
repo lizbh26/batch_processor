@@ -13,7 +13,7 @@ pub const LabelWidget = struct {
     view: TextView,
     buffer: TextView.Buffer,
 
-    pub fn init(self: *LabelWidget, alloc: std.mem.Allocator) !void {
+    pub fn init(self: *LabelWidget, alloc: std.mem.Allocator) void {
         self.alloc = alloc;
         self.view = .{};
         self.buffer = TextView.Buffer{};

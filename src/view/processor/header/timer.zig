@@ -17,13 +17,15 @@ pub const TimerWidget = struct {
     start: zeit.Instant,
     label: *LabelWidget,
 
-    pub fn init(self: *TimerWidget, alloc: std.mem.Allocator, now: zeit.Instant) !*TimerWidget {
+    running: bool,
+
+    pub fn init(self: *TimerWidget, alloc: std.mem.Allocator) void {
         self.alloc = alloc;
 
-        self.start = now;
-        try self.label.init(alloc);
+        self.label.init(alloc);
 
-        return self;
+        self.start = undefined;
+self.running = false;
     }
 
     pub fn deinit(self: *TimerWidget, alloc: std.mem.Allocator) void {

@@ -20,31 +20,29 @@ pub const ProcessorOrchestratorWidget = struct {
     arena: Arena,
     ctx: *ExecutionContext,
 
-    header: *Header,
-    pendingProcessesPanel: *PendingProcessesPanelWidget,
-    currentProcessPanel: *CurrentProcessExecutionPanelWidget,
-    completedProcessesPanel: *CompletedProcessesPanelWidget,
+    header: Header,
+    pendingProcessesPanel: PendingProcessesPanelWidget,
+    currentProcessPanel: CurrentProcessExecutionPanelWidget,
+    completedProcessesPanel: CompletedProcessesPanelWidget,
 
-    pub fn init(extern_alloc: std.mem.Allocator, ctx: *ExecutionContext, now: zeit.Instant) !*ProcessorOrchestratorWidget {
-        const self = try extern_alloc.create(ProcessorOrchestratorWidget);
+    pub fn init(self: *ProcessorOrchestratorWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext, now: zeit.Instant) void {
         self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
 
         self.ctx = ctx;
 
-        self.header = try Header.init(alloc, now);
-        self.pendingProcessesPanel = try PendingProcessesPanelWidget.init(alloc, self.ctx);
-        self.currentProcessPanel = try CurrentProcessExecutionPanelWidget.init(alloc, self.ctx);
-        self.completedProcessesPanel = try CompletedProcessesPanelWidget.init(alloc, self.ctx);
+        self.header.init(alloc, now);
+        self.pendingProcessesPanel.init(alloc, self.ctx);
+        self.currentProcessPanel.init(alloc, self.ctx);
+        self.completedProcessesPanel.init(alloc, self.ctx);
 
         self.currentProcessPanel.start(now);
 
         return self;
     }
 
-    pub fn deinit(self: *ProcessorOrchestratorWidget, alloc: std.mem.Allocator) void {
+    pub fn deinit(self: *ProcessorOrchestratorWidget) void {
         self.arena.deinit();
-        alloc.destroy(self);
     }
 
     pub fn handle_input(_: *ProcessorOrchestratorWidget, _: vaxis.Key) !void {

@@ -19,11 +19,10 @@ pub const CompletedProcessesWidget = struct {
     title: *Label,
     cards: []*ProcessCardWidget,
 
-    pub fn init(extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) !*CompletedProcessesWidget {
-        const self = try extern_alloc.create(CompletedProcessesWidget);
-        self.arena = Arena.init(extern_alloc);
+    pub fn init(self: *CompletedProcessesWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.ctx = ctx;
 
+        self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
 
         try self.title.init(alloc);
@@ -32,8 +31,6 @@ pub const CompletedProcessesWidget = struct {
         for (0..self.cards.len) |i| {
             self.cards[i] = try ProcessCardWidget.init(alloc, .completed);
         }
-
-        return self;
     }
 
     pub fn deinit(self: *CompletedProcessesWidget, alloc: std.mem.Allocator) void {
@@ -41,7 +38,6 @@ pub const CompletedProcessesWidget = struct {
             card.*.deinit(alloc);
         }
         self.arena.deinit();
-        alloc.destroy(self);
     }
 
     fn getCompleted(self: *CompletedProcessesWidget, alloc: std.mem.Allocator) ![]?*Process {
@@ -77,7 +73,7 @@ pub const CompletedProcessesWidget = struct {
                 continue;
             };
 
-            try card.updateProcess(alloc, p);
+            try card.updateProcess(p);
 
             const height = card.getHeight();
             const child = win.child(.{ .x_off = @divTrunc((win.width - card.getWidth()), 2), .y_off = y_off, .width = card.getWidth(), .height = height });

@@ -13,23 +13,18 @@ pub const MainOrchestrator = struct {
 
     phase: enum { input, processor },
 
-    inputOrchestrator: *InputOrchestratorWidget,
-    processorOrchestrator: *ProcessorOrchestratorWidget,
+    inputOrchestrator: InputOrchestratorWidget,
+    processorOrchestrator: ProcessorOrchestratorWidget,
 
-    pub fn init(extern_alloc: std.mem.Allocator) !*MainOrchestrator {
-        const self = try extern_alloc.create(MainOrchestrator);
-        errdefer extern_alloc.destroy(self);
+    ctx: ExecutionContext,
 
+    pub fn init(self: *MainOrchestrator, extern_alloc: std.mem.Allocator) void {
         self.arena = std.heap.ArenaAllocator.init(extern_alloc);
         const alloc = self.arena.allocator();
 
-        self.inputOrchestrator = try InputOrchestratorWidget.init(alloc);
-        errdefer self.inputOrchestrator.deinit(alloc);
+        self.inputOrchestrator.init(alloc);
 
-        self.processorOrchestrator = undefined;
         self.phase = .input;
-
-        return self;
     }
 
     pub fn deinit(self: *MainOrchestrator, alloc: std.mem.Allocator) void {
@@ -37,9 +32,8 @@ pub const MainOrchestrator = struct {
         alloc.destroy(self);
     }
 
-    pub fn switchToProcessorPhase(self: *MainOrchestrator, ctx: *ExecutionContext, now: zeit.Instant) !void {
+    pub fn switchToProcessorPhase(self: *MainOrchestrator) !void {
         const alloc = self.arena.allocator();
-        self.processorOrchestrator = try ProcessorOrchestratorWidget.init(alloc, ctx, now);
         self.inputOrchestrator.deinit(alloc);
         self.phase = .processor;
     }
@@ -53,8 +47,8 @@ pub const MainOrchestrator = struct {
 
     pub fn tick(self: *MainOrchestrator, now: zeit.Instant) !void {
         switch (self.phase) {
+            .input => try self.inputOrchestrator.tick(),
             .processor => try self.processorOrchestrator.tick(now),
-            else => {},
         }
     }
 

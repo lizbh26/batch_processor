@@ -14,26 +14,22 @@ const InputList = @import("components/input_list.zig");
 const Input = @import("components/input_with_label.zig");
 
 const inputs = [_]Input.WidgetConfig{
-    .{ .label = "Número de procesos", .maxInputSize = 20, .type = .number, .validatorFn = null },
+    .{ .label = "Número de procesos", .maxInputSize = 20, .type = .number },
 };
 
 pub const ContextBootstrapperWidget = struct {
     arena: Arena,
     inputList: InputList.InputListWidget,
 
-    pub fn init(self: *ContextBootstrapperWidget, extern_alloc: std.mem.Allocator) !void {
+    pub fn init(self: *ContextBootstrapperWidget, extern_alloc: std.mem.Allocator) void {
         self.arena = Arena.init(extern_alloc);
-        errdefer self.arena.deinit();
-
-        const our_alloc = self.arena.allocator();
-
-        try self.inputList.init(&.{ .alloc = our_alloc, .maxLabelSize = 20, .inputs = &inputs });
+        self.inputList.init(&.{ .alloc = self.arena.allocator(), .inputs = &inputs });
     }
 
-    pub fn deinit(self: *ContextBootstrapperWidget, alloc: std.mem.Allocator) void {
-        self.arena.deinit(); // Frees all child widgets and buffers
-        alloc.destroy(self); // Frees the widget struct itself
+    pub fn deinit(self: *ContextBootstrapperWidget) void {
+        self.arena.deinit();
     }
+
     pub fn extractContext(self: *ContextBootstrapperWidget, extern_alloc: std.mem.Allocator) !*ExecutionContext {
         const processCountInput = self.inputList.getInputAt(0);
 
