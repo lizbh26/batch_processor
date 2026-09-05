@@ -7,15 +7,15 @@ pub const Operation = struct {
     operand: Operand = Operand.sum,
     result: ?i32,
 
-    pub fn calculate(self: *Operation) i32 {
-        switch (self.operand) {
-            .sum => return self.a + self.b,
-            .diff => return self.a - self.b,
-            .product => return self.a * self.b,
-            .division => return self.a / self.b,
-            .remainder => return self.a % self.b,
-        }
-        return 0;
+    pub fn calculate(self: *Operation) void {
+        if (self.result != null) return;
+        self.result = switch (self.operand) {
+            .sum => self.a + self.b,
+            .diff => self.a - self.b,
+            .product => self.a * self.b,
+            .division => @divFloor(self.a, self.b),
+            .remainder => @mod(self.a, self.b),
+        };
     }
 
     pub fn toString(self: *Operation, alloc: std.mem.Allocator, displayResult: bool) ![]const u8 {

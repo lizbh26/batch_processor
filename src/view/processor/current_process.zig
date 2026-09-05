@@ -55,7 +55,7 @@ pub const CurrentProcessExecutionWidget = struct {
         process.tt_ms = diff;
 
         if (process.isDone()) {
-            self.ctx.current_process_idx += 1;
+            self.ctx.moveToNextProcess();
             self.time_start = now;
         }
     }

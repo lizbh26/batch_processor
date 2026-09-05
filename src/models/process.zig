@@ -12,7 +12,7 @@ pub const Process = struct {
     pub fn seed(self: *Process, alloc: std.mem.Allocator, data: struct { id: u16, batchIdx: usize }) void {
         self.id = std.fmt.allocPrint(alloc, "{d}", .{data.id}) catch "ID COULD NOT BE GENERATED";
         self.batchIdx = data.batchIdx;
-        self.operation = .{ .a = 65, .b = 43, .operand = .sum, .result = -1 };
+        self.operation = .{ .a = 65, .b = 43, .operand = .sum, .result = null };
         self.tme_ms = 2000;
         self.tt_ms = 0;
     }

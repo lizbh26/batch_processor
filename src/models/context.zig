@@ -62,6 +62,10 @@ pub const ExecutionContext = struct {
         const batchIdx, const processIdx = self.getBatchAndProcessIdxForGlobalIdx(idx);
         return &self.batches[batchIdx].queue[processIdx].?;
     }
+    pub fn moveToNextProcess(self: *ExecutionContext) void {
+        self.getCurrentProcess().operation.calculate();
+        self.current_process_idx += 1;
+    }
     pub fn isComplete(self: *ExecutionContext) bool {
         return self.process_count == self.current_process_idx;
     }
