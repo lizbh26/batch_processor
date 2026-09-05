@@ -47,22 +47,17 @@ pub const PendingProcessesWidget = struct {
         var pending = try self.arena.allocator().alloc(?*Process, MAX_CARDS_TO_SHOW);
         var i: usize = 0;
 
-        const batch = self.ctx.getCurrentBatch();
-        _, const currentProcessIdx = self.ctx.getBatchAndProcessIdx();
+        const batchIdx, const currentProcessIdx = self.ctx.getBatchAndProcessIdx();
+        const batch: *Batch.Batch = &self.ctx.batches[batchIdx];
 
         for (&batch.queue, 0..) |*process, processIdx| {
-            const p: *Process = &(process.* orelse continue);
+            if (processIdx == currentProcessIdx) continue;
 
-            if (p.isDone() or processIdx == currentProcessIdx)
-                continue;
-
-            pending[i] = p;
-
-            i += 1;
-            if (i >= pending.len) break;
-        }
-        while (i < pending.len) {
-            pending[i] = null;
+            if (process.* == null or process.*.?.isDone()) {
+                pending[i] = null;
+            } else {
+                pending[i] = &(process.*.?);
+            }
             i += 1;
         }
 
@@ -72,19 +67,11 @@ pub const PendingProcessesWidget = struct {
     pub fn draw(self: *PendingProcessesWidget, win: Window) !void {
         const alloc = self.arena.allocator();
 
-        const batchIdx, _ = self.ctx.getBatchAndProcessIdx();
-        const msg: []const u8 = if (self.ctx.isComplete()) "Sin lotes a ejecutar" else try std.fmt.allocPrint(alloc, "Lote {d} de {d} en ejecución", .{ batchIdx + 1, self.ctx.batches.len });
-        try self.title.changeText(msg);
-
-        const titleWidth = usize_to(u16, self.title.getWidth());
-        const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
-        self.title.draw(titleChild);
-
         const pending = try self.getPending();
         defer alloc.free(pending);
 
+        var n: u16 = 0;
         var y_off: u16 = 1;
-
         for (pending, 0..) |process, i| {
             const card = self.cards[i];
 
@@ -94,11 +81,20 @@ pub const PendingProcessesWidget = struct {
             };
 
             try card.updateProcess(self.arena.allocator(), p);
+            n += 1;
 
             const height = card.getHeight();
             const child = win.child(.{ .x_off = @divTrunc(win.width - card.getWidth(), 2), .y_off = y_off, .width = win.width, .height = height });
-            card.*.draw(child);
+            card.draw(child);
             y_off += height;
         }
+
+        const plural_S = if (n == 1) "" else "s";
+        const msg: []const u8 = if (n == 0) "Sin procesos pendientes" else try std.fmt.allocPrint(alloc, "{d} proceso{s} pendiente{s} en el lote", .{ n, plural_S, plural_S });
+        try self.title.changeText(msg);
+
+        const titleWidth = usize_to(u16, self.title.getWidth());
+        const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
+        self.title.draw(titleChild);
     }
 };

@@ -44,14 +44,12 @@ pub const CompletedProcessesWidget = struct {
         alloc.destroy(self);
     }
 
-    fn getCompleted(self: *CompletedProcessesWidget) ![]*Process {
-        const completedQuantity = self.ctx.current_process_idx;
-        if (completedQuantity == 0) return &.{};
-
-        var completed = try self.arena.allocator().alloc(*Process, completedQuantity);
-        for (0..completedQuantity) |i| {
-            const process = try self.ctx.getProcessWithGlobalIdx(completedQuantity - usize_to(u16, i) - 1);
-            completed[i] = process;
+    fn getCompleted(self: *CompletedProcessesWidget, alloc: std.mem.Allocator) ![]?*Process {
+        const total = self.ctx.process_count;
+        var completed = try alloc.alloc(?*Process, total);
+        for (0..total) |i| {
+            const process = try self.ctx.getProcessWithGlobalIdx(total - usize_to(u16, i) - 1);
+            completed[i] = if (process.isDone()) process else null;
         }
 
         return completed;
@@ -68,25 +66,24 @@ pub const CompletedProcessesWidget = struct {
         const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
         self.title.draw(titleChild);
 
-        const processes = try self.getCompleted();
+        const processes = try self.getCompleted(alloc);
         defer alloc.free(processes);
 
-        var i: usize = 0;
         var y_off: u16 = 1;
-        for (processes) |process| {
+        for (processes, 0..) |process, i| {
             const card = self.cards[i];
-            try card.updateProcess(alloc, process);
+            const p = process orelse {
+                card.process = null;
+                continue;
+            };
+
+            try card.updateProcess(alloc, p);
 
             const height = card.getHeight();
             const child = win.child(.{ .x_off = @divTrunc((win.width - card.getWidth()), 2), .y_off = y_off, .width = card.getWidth(), .height = height });
             card.draw(child);
 
-            i += 1;
             y_off += height;
-        }
-        while (i < self.cards.len) {
-            self.cards[i].process = null;
-            i += 1;
         }
     }
 };
