@@ -73,7 +73,7 @@ pub const PendingProcessesWidget = struct {
         const alloc = self.arena.allocator();
 
         const batchIdx, _ = self.ctx.getBatchAndProcessIdx();
-        const msg: []const u8 = if (self.ctx.isComplete()) "Sin lotes a ejecutar" else try std.fmt.allocPrint(alloc, "Lote {d} en ejecución", .{batchIdx + 1});
+        const msg: []const u8 = if (self.ctx.isComplete()) "Sin lotes a ejecutar" else try std.fmt.allocPrint(alloc, "Lote {d} de {d} en ejecución", .{ batchIdx + 1, self.ctx.batches.len });
         try self.title.changeText(msg);
 
         const titleWidth = usize_to(u16, self.title.getWidth());
