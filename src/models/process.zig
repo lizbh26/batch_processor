@@ -17,7 +17,7 @@ pub const Process = struct {
         self.tt_ms = 0;
     }
 
-    pub fn isDone(self: *Process) bool {
+    pub fn isDone(self: *const Process) bool {
         return self.tme_ms <= self.tt_ms;
     }
 };

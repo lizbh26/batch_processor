@@ -59,6 +59,11 @@ pub const ProcessorOrchestratorWidget = struct {
     }
 
     pub fn draw(self: *ProcessorOrchestratorWidget, win: Window) !void {
+        const currBatchIdx, _ = self.ctx.getBatchAndProcessIdx();
+        const remainingBatches = self.ctx.batches.len - currBatchIdx;
+
+        const plural_S = if (remainingBatches == 1) "" else "s";
+        try self.header.title.changeText(if (self.ctx.isComplete()) "Procesamiento terminado" else try std.fmt.allocPrint(self.arena.allocator(), "{d} lote{s} pendiente{s} ({d}/{d})", .{ remainingBatches, plural_S, plural_S, currBatchIdx + 1, self.ctx.batches.len }));
         const headerContainer = win.child(.{ .x_off = 0, .y_off = 0, .width = win.width, .height = 2, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = 255 } } } });
         try self.header.draw(headerContainer);
 
