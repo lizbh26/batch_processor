@@ -1,14 +1,24 @@
-pub const Validators = struct {
-    pub fn required(str: []const u8) bool {
-        return str.len == 0;
+pub fn required(str: []const u8) bool {
+    return str.len != 0;
+}
+pub fn is_number(char: u8) bool {
+    return (char >= '0' and char <= '9');
+}
+pub fn only_numbers(str: []const u8) bool {
+    for (str) |char| {
+        if (!is_number(char)) return false;
     }
-    pub fn is_number(char: u8) bool {
-        return (char >= '0' or char <= '9');
-    }
-    pub fn only_numbers(str: []const u8) bool {
-        for (str) |char| {
-            if (!Validators.is_number(char)) return false;
-        }
-        return true;
-    }
-};
+    return true;
+}
+
+pub fn validateStringField(str: []const u8) []const u8 {
+    if (!required(str)) return "Este campo es requerido";
+    return "";
+}
+
+pub fn validateNaturalNumberField(str: []const u8) []const u8 {
+    if (!required(str)) return "Este campo es requerido";
+    if (!only_numbers(str)) return "Debe de ser un número entero mayor a 0";
+
+    return "";
+}

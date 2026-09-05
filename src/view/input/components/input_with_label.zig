@@ -3,8 +3,8 @@ const vaxis = @import("vaxis");
 const vxfw = vaxis.vxfw;
 
 const Window = vaxis.Window;
-const TextView = vaxis.widgets.TextView;
 const TextInput = vaxis.widgets.TextInput;
+const Label = @import("../../components/label.zig").LabelWidget;
 
 const Arena = std.heap.ArenaAllocator;
 const usize_to = @import("~").utils.usize_to;
@@ -14,11 +14,10 @@ const INPUT_HEIGHT = 3;
 const ERROR_LABEL_HEIGHT = 2;
 pub const TOTAL_HEIGHT = INPUT_HEIGHT + ERROR_LABEL_HEIGHT;
 
-const Validator = @import("../utils/validators.zig").Validators;
-pub const ValidatorFnType = ?*const fn (input: []const u8) []const u8;
+const Validator = @import("../utils/validators.zig");
 
-pub const InputType = enum { text, number };
-pub const WidgetConfig = struct { label: []const u8, maxInputSize: ?u16, validatorFn: ValidatorFnType, type: InputType };
+pub const InputType = enum { text, number, operation };
+pub const WidgetConfig = struct { label: []const u8, maxInputSize: ?u16, type: InputType };
 
 pub const InputWidget = struct {
     arena: Arena,
@@ -58,7 +57,11 @@ pub const InputWidget = struct {
         self.arena.deinit();
     }
 
-    pub fn handle_input(self: *InputWidget, key: vaxis.Key) !void {
+    pub fn reset(self: *InputWidget) void {
+        self.input.reset();
+    }
+
+    pub fn handleInput(self: *InputWidget, key: vaxis.Key) !void {
         if (self.config.maxInputSize) |max_size| {
             if (self.input.buf.realLength() >= max_size) return;
         }
@@ -85,7 +88,26 @@ pub const InputWidget = struct {
         const input_text = self.getInputText(alloc);
         defer alloc.free(input_text);
 
-        return if (self.config.validatorFn) |func| func(input_text) else "";
+        switch (self.config.type) {
+            .text => return Validator.validateStringField(input_text),
+            .number => return Validator.validateNaturalNumberField(input_text),
+            else => return "",
+        }
+    }
+
+    pub fn isEmpty(self: *InputWidget) bool {
+        const alloc = self.arena.allocator();
+
+        const text = self.getInputText(alloc);
+        defer alloc.free(text);
+
+        return text.len == 0;
+    }
+    pub fn isValid(self: *InputWidget) bool {
+        const alloc = self.arena.allocator();
+        const errorText = self.validateInput(alloc);
+        defer alloc.free(errorText);
+        return errorText.len == 0;
     }
 
     pub fn draw(self: *InputWidget, win: vaxis.Window) !void {
@@ -105,10 +127,8 @@ pub const InputWidget = struct {
         const alloc = self.arena.allocator();
         const error_text = self.validateInput(alloc);
 
-        if (error_text.len > 0) {
-            try self.errorLabel.changeText(error_text);
-            const error_child = input_error_wrapper.child(.{ .y_off = INPUT_HEIGHT, .width = input_error_wrapper.width, .height = ERROR_LABEL_HEIGHT });
-            self.errorLabel.draw(error_child);
-        }
+        try self.errorLabel.changeText(error_text);
+        const error_child = input_error_wrapper.child(.{ .y_off = INPUT_HEIGHT, .width = input_error_wrapper.width, .height = ERROR_LABEL_HEIGHT });
+        self.errorLabel.draw(error_child);
     }
 };

@@ -4,11 +4,21 @@ const vxfw = vaxis.vxfw;
 
 const Window = vaxis.Window;
 
+const count_utf8 = @import("~").utils.count_utf8;
 const usize_to = @import("~").utils.usize_to;
 
 const Input = @import("input_with_label.zig");
 
-pub const WidgetConfig = struct { alloc: std.mem.Allocator, maxLabelSize: u16, inputs: []const Input.WidgetConfig };
+pub const WidgetConfig = struct { alloc: std.mem.Allocator, inputs: []const Input.WidgetConfig };
+
+fn findLargestLabelSize(arr: []const Input.WidgetConfig) u16 {
+    var largest: usize = 0;
+    for (arr) |config| {
+        largest = @max(largest, count_utf8(config.label));
+    }
+
+    return usize_to(u16, largest);
+}
 
 pub const InputListWidget = struct {
     arena: std.heap.ArenaAllocator,
@@ -21,8 +31,10 @@ pub const InputListWidget = struct {
         const alloc = self.arena.allocator();
 
         self.inputs = alloc.alloc(Input.InputWidget, config.inputs.len) catch unreachable;
+        const largestLabelSize = findLargestLabelSize(config.inputs);
+
         for (config.inputs, 0..) |inputConfig, i| {
-            try self.inputs[i].init(alloc, config.maxLabelSize, inputConfig);
+            self.inputs[i].init(alloc, largestLabelSize, inputConfig);
         }
 
         self.active_field_idx = 0;
@@ -34,13 +46,20 @@ pub const InputListWidget = struct {
         alloc.free(self.inputs);
     }
 
+    pub fn reset(self: *InputListWidget) void {
+        for (self.inputs) |*input| {
+            input.reset();
+        }
+        self.active_field_idx = 0;
+    }
+
     pub fn isDone(self: *InputListWidget) bool {
         return self.active_field_idx == self.inputs.len;
     }
 
     pub fn getInputAt(self: *InputListWidget, idx: usize) []const u8 {
         if (idx > self.inputs.len) return "";
-        return self.inputs[idx].getInputText();
+        return self.inputs[idx].getInputText(self.arena.allocator());
     }
     pub fn getActiveInput(self: *InputListWidget) *Input.InputWidget {
         return &self.inputs[self.active_field_idx];
@@ -57,7 +76,7 @@ pub const InputListWidget = struct {
         } else if (key.matches(vaxis.Key.enter, .{}) and input.isValid()) {
             self.active_field_idx += 1;
         } else {
-            try self.inputs[self.active_field_idx].handle_input(key);
+            try self.inputs[self.active_field_idx].handleInput(key);
         }
         self.getActiveInput().focus();
     }
