@@ -22,7 +22,9 @@ pub const MainOrchestrator = struct {
         self.arena = std.heap.ArenaAllocator.init(extern_alloc);
         const alloc = self.arena.allocator();
 
-        self.inputOrchestrator.init(alloc);
+        self.ctx.init(alloc);
+
+        self.inputOrchestrator.init(alloc, &self.ctx);
 
         self.phase = .input;
     }

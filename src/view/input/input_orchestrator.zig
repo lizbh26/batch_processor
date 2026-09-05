@@ -9,23 +9,22 @@ const Arena = std.heap.ArenaAllocator;
 const ExecutionContext = @import("~").models.Context.ExecutionContext;
 
 const ContextBootstrapperWidget = @import("context_bootstrapper.zig").ContextBootstrapperWidget;
+const EditProcessWidget = @import("process_editor.zig").EditProcessWidget;
 
 pub const InputOrchestratorWidget = struct {
     arena: Arena,
-    ctx: ?*ExecutionContext,
+    ctx: *ExecutionContext,
 
     bootstrap_widget: ContextBootstrapperWidget,
+    edit_widget: EditProcessWidget,
 
-    pub fn init(extern_alloc: std.mem.Allocator) !*InputOrchestratorWidget {
-        const self = try extern_alloc.create(InputOrchestratorWidget);
-
+    pub fn init(self: *InputOrchestratorWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
-        const our_alloc = self.arena.allocator();
-        self.ctx = null;
+        const alloc = self.arena.allocator();
+        self.ctx = ctx;
 
-        try self.bootstrap_widget.init(our_alloc);
-
-        return self;
+        self.bootstrap_widget.init(alloc);
+        self.edit_widget.init(alloc);
     }
     pub fn deinit(self: *InputOrchestratorWidget, extern_alloc: std.mem.Allocator) void {
         self.arena.deinit();
@@ -37,21 +36,28 @@ pub const InputOrchestratorWidget = struct {
     }
 
     pub fn handle_input(self: *InputOrchestratorWidget, key: vaxis.Key) !void {
-        if (self.ctx != null) {
-            //Pass event to processes editor
+        if (self.ctx.process_count > 0) {
+            try self.edit_widget.handleInput(key);
         } else {
-            try self.bootstrap_widget.handle_input(key);
+            try self.bootstrap_widget.handleInput(key);
+        }
+    }
+
+    pub fn tick(self: *InputOrchestratorWidget) !void {
+        if (self.ctx.process_count > 0) {
+            self.edit_widget.setProcessToEdit(self.ctx.getCurrentProcess());
+        } else {
+            if (self.bootstrap_widget.isDone()) {
+                try self.bootstrap_widget.prepareContext(self.ctx);
+            }
         }
     }
 
     pub fn draw(self: *InputOrchestratorWidget, win: Window) !void {
-        if (self.ctx != null) {
-            //Screen to edit processes
+        if (self.ctx.process_count > 0) {
+            try self.edit_widget.draw(win);
         } else {
             try self.bootstrap_widget.draw(win);
-            if (self.bootstrap_widget.isDone) {
-                self.ctx = try self.bootstrap_widget.extractContext(self.arena.allocator());
-            }
         }
     }
 };

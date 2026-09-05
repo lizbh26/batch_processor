@@ -30,10 +30,10 @@ pub const ContextBootstrapperWidget = struct {
         self.arena.deinit();
     }
 
-    pub fn extractContext(self: *ContextBootstrapperWidget, extern_alloc: std.mem.Allocator) !*ExecutionContext {
+    pub fn prepareContext(self: *ContextBootstrapperWidget, ctx: *ExecutionContext) !void {
         const processCountInput = self.inputList.getInputAt(0);
 
-        return try ExecutionContext.init(extern_alloc, std.fmt.parseInt(u16, processCountInput, 10) catch unreachable);
+        return try ctx.createBatches(std.fmt.parseInt(u16, processCountInput, 10) catch unreachable);
     }
     pub fn isDone(self: *ContextBootstrapperWidget) bool {
         return self.inputList.isDone();
