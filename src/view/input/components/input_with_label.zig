@@ -87,7 +87,8 @@ pub const InputWidget = struct {
         return usize_to(u16, text.len);
     }
 
-    fn validateInput(self: *InputWidget, alloc: std.mem.Allocator) []const u8 {
+    fn validateInput(self: *InputWidget) []const u8 {
+        const alloc = self.arena.allocator();
         const inputText = self.getInputText(alloc);
         defer alloc.free(inputText);
 
@@ -110,9 +111,7 @@ pub const InputWidget = struct {
         return text.len == 0;
     }
     pub fn isValid(self: *InputWidget) bool {
-        const alloc = self.arena.allocator();
-        const errorText = self.validateInput(alloc);
-        defer alloc.free(errorText);
+        const errorText = self.validateInput();
         return errorText.len == 0;
     }
 
@@ -145,7 +144,7 @@ pub const InputWidget = struct {
         const inputChild = container.child(.{ .x_off = labelWidth + 1, .y_off = 0, .width = inputWidth, .height = 2, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = if (self.focused) 255 else 56 } } } });
         self.input.draw(inputChild);
 
-        try self.errorLabel.changeText(self.validateInput(self.arena.allocator()));
+        try self.errorLabel.changeText(self.validateInput());
         if (!self.errorLabel.isEmpty()) {
             const errorChild = container.child(.{ .x_off = labelWidth + 1, .y_off = 2, .width = self.getErrorWidth(), .height = 1 });
             self.errorLabel.draw(errorChild);
