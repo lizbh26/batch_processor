@@ -9,7 +9,7 @@ const Process = @import("~").models.Process.Process;
 
 const usize_to = @import("~").utils.usize_to;
 
-const MAX_CARD_WIDTH = 40;
+const MAX_CARD_WIDTH = 50;
 const PADDING_X_INNER = 1;
 
 pub const CardType = enum { pending, doing, completed };
