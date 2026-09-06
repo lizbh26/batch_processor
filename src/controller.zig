@@ -64,15 +64,16 @@ pub const Controller = struct {
         // The main event loop. Vaxis provides a thread safe, blocking, buffered
         // queue which can serve as the primary event queue for an application
         while (true) {
+            frameStart = self.getNow();
+
             const exit = try self.handlePendingEvents();
             if (exit) break;
 
-            const now = self.getNow();
-            try self.waitRemainingFrameTime(frameStart, now);
-            frameStart = self.getNow();
-
             try self.orchestrator.tick(frameStart);
             try self.draw();
+
+            const now = self.getNow();
+            try self.waitRemainingFrameTime(frameStart, now);
         }
     }
 
