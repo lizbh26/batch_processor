@@ -39,6 +39,8 @@ pub const PendingProcessesWidget = struct {
     }
 
     fn getPending(self: *PendingProcessesWidget) ![]?*Process {
+        if (self.ctx.isComplete()) return &.{};
+
         var pending = try self.arena.allocator().alloc(?*Process, MAX_CARDS_TO_SHOW);
         var i: usize = 0;
 
