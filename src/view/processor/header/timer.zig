@@ -58,21 +58,23 @@ pub const TimerWidget = struct {
 
     fn diffToString(self: *TimerWidget, diff: zeit.Time) ![]const u8 {
         //IMPORTANT: if simulation goes beyond a day, this will loop back around.
+        var localArena = std.heap.ArenaAllocator.init(self.alloc);
+        defer localArena.deinit();
+        const localAlloc = localArena.allocator();
 
-        const hours = if (diff.hour > 0) try std.fmt.allocPrint(self.alloc, "{d}:", .{diff.hour}) else "";
-        defer self.alloc.free(hours);
+        const hours = if (diff.hour > 0) try std.fmt.allocPrint(localAlloc, "{d}:", .{diff.hour}) else "";
 
         var minutes: []const u8 = try std.fmt.allocPrint(self.alloc, "{d}:", .{diff.minute});
-        if (minutes.len == 2) minutes = leftpad(minutes, 1, '0', self.alloc);
-        defer self.alloc.free(minutes);
+        if (minutes.len == 2)
+            minutes = leftpad(minutes, 1, '0', self.alloc);
 
         var seconds: []const u8 = try std.fmt.allocPrint(self.alloc, "{d}.", .{diff.second});
-        if (seconds.len == 2) seconds = leftpad(seconds, 1, '0', self.alloc);
-        defer self.alloc.free(seconds);
+        if (seconds.len == 2)
+            seconds = leftpad(seconds, 1, '0', self.alloc);
 
         var milliseconds: []const u8 = try std.fmt.allocPrint(self.alloc, "{d}", .{diff.millisecond});
-        if (milliseconds.len < 3) milliseconds = leftpad(milliseconds, 3 - milliseconds.len, '0', self.alloc);
-        defer self.alloc.free(seconds);
+        if (milliseconds.len < 3)
+            milliseconds = leftpad(milliseconds, 3 - milliseconds.len, '0', self.alloc);
 
         return try std.mem.concat(self.alloc, u8, &.{ hours, minutes, seconds, milliseconds });
     }

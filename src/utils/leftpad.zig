@@ -2,8 +2,6 @@ const std = @import("std");
 
 const count_utf8 = @import("count_utf8.zig").count_utf8;
 pub fn leftpad(str: []const u8, by: usize, with: u8, alloc: std.mem.Allocator) []const u8 {
-    defer alloc.free(str);
-
     const distinct_chars = count_utf8(str);
     const whitespaces = str.len - distinct_chars + by;
 
