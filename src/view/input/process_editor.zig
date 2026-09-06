@@ -14,20 +14,26 @@ const ExecutionContext = @import("~").models.Context.ExecutionContext;
 const InputListWidget = @import("components/input_list.zig").InputListWidget;
 const Input = @import("components/input_with_label.zig");
 
-const inputs = [_]Input.WidgetConfig{
+const CtxValidators = @import("utils/ctx_validators.zig");
+
+var inputs = [_]Input.WidgetConfig{
     .{ .label = "Nombre del programador", .maxInputSize = 50, .type = .text },
     .{ .label = "ID del programa", .maxInputSize = 20, .type = .text },
     .{ .label = "Operación", .maxInputSize = 20, .type = .operation },
     .{ .label = "Tiempo Máximo Estimado", .maxInputSize = 3, .type = .number },
 };
 
+const WidgetConfig = struct { ctx: *ExecutionContext };
 pub const EditProcessWidget = struct {
     arena: Arena,
 
     inputList: InputListWidget,
 
-    pub fn init(self: *EditProcessWidget, alloc: std.mem.Allocator) void {
+    pub fn init(self: *EditProcessWidget, alloc: std.mem.Allocator, config: WidgetConfig) void {
         self.arena = Arena.init(alloc);
+
+        inputs[1].ctxValidator = CtxValidators.validateUniqueId;
+        inputs[1].ctx = config.ctx;
         self.inputList.init(&.{ .alloc = alloc, .inputs = &inputs });
     }
 

@@ -24,7 +24,7 @@ pub const InputOrchestratorWidget = struct {
         self.ctx = ctx;
 
         self.bootstrap_widget.init(alloc);
-        self.edit_widget.init(alloc);
+        self.edit_widget.init(alloc, .{ .ctx = self.ctx });
     }
     pub fn deinit(self: *InputOrchestratorWidget, extern_alloc: std.mem.Allocator) void {
         self.arena.deinit();

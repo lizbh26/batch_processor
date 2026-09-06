@@ -10,12 +10,15 @@ const Arena = std.heap.ArenaAllocator;
 const usize_to = @import("~").utils.usize_to;
 const leftpad = @import("~").utils.leftpad;
 
+const ExecutionContext = @import("~").models.Context.ExecutionContext;
+
 const MAX_INPUT_SIZE = 50;
 
-const Validator = @import("../utils/validators.zig");
+const Validators = @import("../utils/validators.zig");
+const CtxValidators = @import("../utils/ctx_validators.zig");
 
 pub const InputType = enum { text, number, operation };
-pub const WidgetConfig = struct { label: []const u8, maxInputSize: ?u16, type: InputType };
+pub const WidgetConfig = struct { label: []const u8, maxInputSize: ?u16, type: InputType, ctxValidator: ?CtxValidators.ContextValidator = null, ctx: ?*ExecutionContext = null };
 
 pub const InputWidget = struct {
     arena: Arena,
@@ -85,12 +88,15 @@ pub const InputWidget = struct {
     }
 
     fn validateInput(self: *InputWidget, alloc: std.mem.Allocator) []const u8 {
-        const input_text = self.getInputText(alloc);
-        defer alloc.free(input_text);
+        const inputText = self.getInputText(alloc);
+        defer alloc.free(inputText);
+
+        if (self.config.ctxValidator != null and self.config.ctx != null)
+            return self.config.ctxValidator.?(inputText, self.config.ctx.?);
 
         switch (self.config.type) {
-            .text => return Validator.validateStringField(input_text),
-            .number => return Validator.validateNaturalNumberField(input_text),
+            .text => return Validators.validateStringField(inputText),
+            .number => return Validators.validateNaturalNumberField(inputText),
             else => return "",
         }
     }

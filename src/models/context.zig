@@ -2,6 +2,8 @@ const std = @import("std");
 const Batch = @import("batch.zig");
 const Process = @import("process.zig").Process;
 
+const usize_to = @import("../utils/index.zig").usize_to;
+
 pub const ExecutionContext = struct {
     arena: std.heap.ArenaAllocator,
 
@@ -66,5 +68,14 @@ pub const ExecutionContext = struct {
     }
     pub fn isComplete(self: *ExecutionContext) bool {
         return self.process_count == self.current_process_idx;
+    }
+
+    pub fn isUniqueId(self: *ExecutionContext, id: []const u8) bool {
+        for (0..self.current_process_idx) |i| {
+            const p = self.getProcessWithGlobalIdx(usize_to(u16, i)) catch unreachable;
+            if (std.mem.eql(u8, p.id, id)) return false;
+        }
+
+        return true;
     }
 };
