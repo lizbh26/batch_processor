@@ -25,20 +25,19 @@ pub const ProcessorOrchestratorWidget = struct {
     currentProcessPanel: CurrentProcessExecutionPanelWidget,
     completedProcessesPanel: CompletedProcessesPanelWidget,
 
-    pub fn init(self: *ProcessorOrchestratorWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext, now: zeit.Instant) void {
+    running: bool,
+
+    pub fn init(self: *ProcessorOrchestratorWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
 
         self.ctx = ctx;
+        self.running = false;
 
-        self.header.init(alloc, now);
+        self.header.init(alloc);
         self.pendingProcessesPanel.init(alloc, self.ctx);
         self.currentProcessPanel.init(alloc, self.ctx);
         self.completedProcessesPanel.init(alloc, self.ctx);
-
-        self.currentProcessPanel.start(now);
-
-        return self;
     }
 
     pub fn deinit(self: *ProcessorOrchestratorWidget) void {
@@ -49,8 +48,15 @@ pub const ProcessorOrchestratorWidget = struct {
         //do nothing yet
     }
 
+    pub fn run(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {
+        self.running = true;
+        self.header.timerWidget.run(now);
+        self.currentProcessPanel.run(now);
+        try self.completedProcessesPanel.run();
+    }
+
     pub fn tick(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {
-        if (!self.ctx.isComplete()) {
+        if (!self.ctx.isComplete() and self.running) {
             try self.header.tick(now);
             self.currentProcessPanel.tick(now);
         }

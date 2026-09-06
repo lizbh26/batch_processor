@@ -19,13 +19,12 @@ pub const Header = struct {
     title: Label,
     timerWidget: TimerWidget,
 
-    pub fn init(self: *Header, alloc: std.mem.Allocator) void {
-        self.arena = Arena.init(alloc);
+    pub fn init(self: *Header, extern_alloc: std.mem.Allocator) void {
+        self.arena = Arena.init(extern_alloc);
+        const alloc = self.arena.allocator();
 
         self.title.init(alloc);
-        self.timerWidget.init(self.arena.allocator());
-
-        return self;
+        self.timerWidget.init(alloc);
     }
 
     pub fn deinit(self: *Header, alloc: std.mem.Allocator) void {

@@ -15,7 +15,7 @@ pub const TimerWidget = struct {
     alloc: std.mem.Allocator,
 
     start: zeit.Instant,
-    label: *LabelWidget,
+    label: LabelWidget,
 
     running: bool,
 
@@ -25,7 +25,7 @@ pub const TimerWidget = struct {
         self.label.init(alloc);
 
         self.start = undefined;
-self.running = false;
+        self.running = false;
     }
 
     pub fn deinit(self: *TimerWidget, alloc: std.mem.Allocator) void {
@@ -33,7 +33,17 @@ self.running = false;
         alloc.destroy(self);
     }
 
+    pub fn run(self: *TimerWidget, now: zeit.Instant) void {
+        self.start = now;
+        self.running = true;
+    }
+    pub fn stop(self: *TimerWidget) void {
+        self.running = false;
+    }
+
     pub fn tick(self: *TimerWidget, now: zeit.Instant) !void {
+        if (!self.running) return;
+
         const diffNano = now.timestamp - self.start.timestamp;
         const diff = zeit.instant(.{ .unix_nano = diffNano }, &zeit.utc).time();
         try self.label.changeText(try self.diffToString(diff));

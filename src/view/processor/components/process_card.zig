@@ -23,7 +23,7 @@ pub const ProcessCard = struct {
     timeLabel: LabelWidget,
 
     pub fn init(self: *ProcessCard, extern_alloc: std.mem.Allocator, cardType: CardType) void {
-        self.arena = std.heap.ArenaAllocator(extern_alloc);
+        self.arena = std.heap.ArenaAllocator.init(extern_alloc);
         const alloc = self.arena.allocator();
 
         self.type = cardType;
@@ -35,8 +35,6 @@ pub const ProcessCard = struct {
 
         self.timeLabel.init(alloc);
         self.process = null;
-
-        return self;
     }
 
     pub fn deinit(self: *ProcessCard) void {

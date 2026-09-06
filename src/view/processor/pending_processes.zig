@@ -17,26 +17,23 @@ pub const PendingProcessesWidget = struct {
     arena: Arena,
     ctx: *ExecutionContext,
 
-    title: *Label,
-    cards: []*ProcessCardWidget,
+    title: Label,
+    cards: [MAX_CARDS_TO_SHOW]ProcessCardWidget,
 
     pub fn init(self: *PendingProcessesWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
         self.ctx = ctx;
 
         const alloc = self.arena.allocator();
-        try self.title.init(alloc);
-        self.cards = try self.arena.allocator().alloc(*ProcessCardWidget, MAX_CARDS_TO_SHOW);
+        self.title.init(alloc);
         for (0..self.cards.len) |i| {
-            self.cards[i] = try ProcessCardWidget.init(alloc, .pending);
+            self.cards[i].init(alloc, .pending);
         }
-
-        return self;
     }
 
     pub fn deinit(self: *PendingProcessesWidget, alloc: std.mem.Allocator) void {
         for (self.cards) |*card| {
-            card.*.deinit(alloc);
+            card.deinit(alloc);
         }
         self.arena.deinit();
     }
@@ -71,7 +68,7 @@ pub const PendingProcessesWidget = struct {
         var n: u16 = 0;
         var y_off: u16 = 1;
         for (pending, 0..) |process, i| {
-            const card = self.cards[i];
+            const card = &self.cards[i];
 
             const p = process orelse {
                 card.process = null;

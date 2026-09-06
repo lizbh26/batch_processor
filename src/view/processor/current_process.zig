@@ -23,8 +23,7 @@ pub const CurrentProcessExecutionWidget = struct {
 
     running: bool,
 
-    pub fn init(extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
-        const self = try extern_alloc.create(CurrentProcessExecutionWidget);
+    pub fn init(self: *CurrentProcessExecutionWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
 
@@ -32,15 +31,13 @@ pub const CurrentProcessExecutionWidget = struct {
         self.title.init(alloc);
         self.card.init(alloc, .doing);
         self.running = false;
-
-        return self;
     }
     pub fn deinit(self: *CurrentProcessExecutionWidget, alloc: std.mem.Allocator) void {
         self.arena.deinit();
         alloc.destroy(self);
     }
 
-    pub fn start(self: *CurrentProcessExecutionWidget, now: zeit.Instant) void {
+    pub fn run(self: *CurrentProcessExecutionWidget, now: zeit.Instant) void {
         self.time_start = now;
         self.running = true;
     }

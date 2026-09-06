@@ -16,8 +16,8 @@ pub const CompletedProcessesWidget = struct {
     arena: Arena,
     ctx: *ExecutionContext,
 
-    title: *Label,
-    cards: []*ProcessCardWidget,
+    title: Label,
+    cards: []ProcessCardWidget,
 
     pub fn init(self: *CompletedProcessesWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.ctx = ctx;
@@ -25,12 +25,7 @@ pub const CompletedProcessesWidget = struct {
         self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
 
-        try self.title.init(alloc);
-        self.cards = try alloc.alloc(*ProcessCardWidget, self.ctx.process_count);
-
-        for (0..self.cards.len) |i| {
-            self.cards[i] = try ProcessCardWidget.init(alloc, .completed);
-        }
+        self.title.init(alloc);
     }
 
     pub fn deinit(self: *CompletedProcessesWidget, alloc: std.mem.Allocator) void {
@@ -38,6 +33,15 @@ pub const CompletedProcessesWidget = struct {
             card.*.deinit(alloc);
         }
         self.arena.deinit();
+    }
+
+    pub fn run(self: *CompletedProcessesWidget) !void {
+        const alloc = self.arena.allocator();
+        self.cards = try alloc.alloc(ProcessCardWidget, self.ctx.process_count);
+
+        for (0..self.cards.len) |i| {
+            self.cards[i].init(alloc, .completed);
+        }
     }
 
     fn getCompleted(self: *CompletedProcessesWidget, alloc: std.mem.Allocator) ![]?*Process {
@@ -67,7 +71,7 @@ pub const CompletedProcessesWidget = struct {
 
         var y_off: u16 = 1;
         for (processes, 0..) |process, i| {
-            const card = self.cards[i];
+            const card = &self.cards[i];
             const p = process orelse {
                 card.process = null;
                 continue;
