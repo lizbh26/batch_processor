@@ -33,8 +33,8 @@ pub const ContextBootstrapperWidget = struct {
 
     pub fn prepareContext(self: *ContextBootstrapperWidget, ctx: *ExecutionContext) !void {
         const processCountInput = self.inputList.getInputAt(0);
-
-        return try ctx.createBatches(std.fmt.parseInt(u16, processCountInput, 10) catch unreachable);
+        const pCount = std.fmt.parseInt(u16, processCountInput, 10) catch unreachable;
+        return try ctx.createBatches(pCount);
     }
     pub fn isDone(self: *ContextBootstrapperWidget) bool {
         return self.inputList.isDone();
