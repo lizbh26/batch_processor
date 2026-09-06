@@ -27,7 +27,7 @@ pub const Operation = struct {
             switch (self.operand) {
                 .sum => '+',
                 .diff => '-',
-                .product => 'x',
+                .product => '*',
                 .division => '/',
                 .remainder => '%',
             };
