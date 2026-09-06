@@ -45,7 +45,7 @@ pub const MainOrchestrator = struct {
     pub fn handleInput(self: *MainOrchestrator, key: vaxis.Key) !void {
         switch (self.phase) {
             .input => try self.inputOrchestrator.handleInput(key),
-            else => {},
+            .processor => try self.processorOrchestrator.handleInput(key),
         }
     }
 

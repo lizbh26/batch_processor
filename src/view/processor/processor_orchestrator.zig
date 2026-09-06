@@ -44,8 +44,8 @@ pub const ProcessorOrchestratorWidget = struct {
         self.arena.deinit();
     }
 
-    pub fn handle_input(_: *ProcessorOrchestratorWidget, _: vaxis.Key) !void {
-        //do nothing yet
+    pub fn handleInput(self: *ProcessorOrchestratorWidget, key: vaxis.Key) !void {
+        self.completedProcessesPanel.handleInput(key);
     }
 
     pub fn run(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {

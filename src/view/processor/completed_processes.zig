@@ -18,6 +18,7 @@ pub const CompletedProcessesWidget = struct {
 
     title: Label,
     cards: []ProcessCardWidget,
+    cardOffset: u16,
 
     pub fn init(self: *CompletedProcessesWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.ctx = ctx;
@@ -26,6 +27,7 @@ pub const CompletedProcessesWidget = struct {
         const alloc = self.arena.allocator();
 
         self.title.init(alloc);
+        self.cardOffset = 0;
     }
 
     pub fn deinit(self: *CompletedProcessesWidget, alloc: std.mem.Allocator) void {
@@ -44,11 +46,19 @@ pub const CompletedProcessesWidget = struct {
         }
     }
 
+    pub fn handleInput(self: *CompletedProcessesWidget, key: vaxis.Key) void {
+        if (key.matches(vaxis.Key.down, .{})) {
+            if (self.cardOffset < self.ctx.current_process_idx - 1) self.cardOffset += 1;
+        } else if (key.matches(vaxis.Key.up, .{})) {
+            if (self.cardOffset > 0) self.cardOffset -= 1;
+        }
+    }
+
     fn getCompleted(self: *CompletedProcessesWidget, alloc: std.mem.Allocator) ![]?*Process {
         const total = self.ctx.process_count;
         var completed = try alloc.alloc(?*Process, total);
-        for (0..total) |i| {
-            const process = try self.ctx.getProcessWithGlobalIdx(total - usize_to(u16, i) - 1);
+        for (self.cardOffset..total) |i| {
+            const process = try self.ctx.getProcessWithGlobalIdx(usize_to(u16, i));
             completed[i] = if (process.isDone()) process else null;
         }
 
@@ -70,9 +80,9 @@ pub const CompletedProcessesWidget = struct {
         defer alloc.free(processes);
 
         var y_off: u16 = 1;
-        for (processes, 0..) |process, i| {
+        for (self.cardOffset..self.ctx.process_count) |i| {
             const card = &self.cards[i];
-            const p = process orelse {
+            const p = processes[i] orelse {
                 card.process = null;
                 continue;
             };
