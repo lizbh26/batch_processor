@@ -26,9 +26,8 @@ pub const InputOrchestratorWidget = struct {
         self.bootstrap_widget.init(alloc);
         self.edit_widget.init(alloc, .{ .ctx = self.ctx });
     }
-    pub fn deinit(self: *InputOrchestratorWidget, extern_alloc: std.mem.Allocator) void {
+    pub fn deinit(self: *InputOrchestratorWidget) void {
         self.arena.deinit();
-        extern_alloc.destroy(self);
     }
 
     pub fn handleInput(self: *InputOrchestratorWidget, key: vaxis.Key) !void {
