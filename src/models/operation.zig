@@ -5,16 +5,20 @@ pub const Operation = struct {
     a: i32 = 0,
     b: i32 = 0,
     operand: Operand = Operand.sum,
-    result: ?i32,
+    result: ?f32,
 
     pub fn calculate(self: *Operation) void {
         if (self.result != null) return;
+
+        const a: f32 = @floatFromInt(self.a);
+        const b: f32 = @floatFromInt(self.b);
+
         self.result = switch (self.operand) {
-            .sum => self.a + self.b,
-            .diff => self.a - self.b,
-            .product => self.a * self.b,
-            .division => @divFloor(self.a, self.b),
-            .remainder => @mod(self.a, self.b),
+            .sum => a + b,
+            .diff => a - b,
+            .product => a * b,
+            .division => a / b,
+            .remainder => @mod(a, b),
         };
     }
 
@@ -30,7 +34,7 @@ pub const Operation = struct {
 
         var op = try std.fmt.allocPrint(alloc, "{d} {c} {d}", .{ self.a, operand, self.b });
         if (displayResult and self.result != null) {
-            const res = try std.fmt.allocPrint(alloc, " = {d}", .{self.result.?});
+            const res = try std.fmt.allocPrint(alloc, " = {d:.4}", .{self.result.?});
             defer alloc.free(res);
 
             const prevMem = (&op).*;
