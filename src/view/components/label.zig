@@ -45,6 +45,7 @@ pub const LabelWidget = struct {
     }
 
     pub fn draw(self: *LabelWidget, win: Window) void {
-        self.view.draw(win, self.buffer);
+        if (self.buffer.content.items.len > 0)
+            self.view.draw(win, self.buffer);
     }
 };
