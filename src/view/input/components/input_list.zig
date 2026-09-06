@@ -103,9 +103,9 @@ pub const InputListWidget = struct {
     }
 
     pub fn draw(self: *InputListWidget, win: Window) !void {
-        const width, const height = self.getDimensions();
+        const width, const height = self.getDimensions(win);
 
-        const container = win.child(.{ .x_off = @divTrunc(win.width - width, 2), .y_off = @divTrunc(win.height - height, 2), .width = width, .height = height + 2, .border = .{ .where = .all, .style = .{ .fg = .{ .index = 255 } } } });
+        const container = win.child(.{ .x_off = @divTrunc(win.width - width, 2), .y_off = @divTrunc(win.height - height, 2), .width = width, .height = height, .border = .{ .where = .all, .style = .{ .fg = .{ .index = 255 } } } });
 
         const titleWidth = usize_to(u16, self.title.getWidth());
         const titleChild = container.child(.{ .x_off = @divTrunc(container.width - titleWidth, 2), .y_off = 1, .width = titleWidth, .height = 1 });
@@ -130,7 +130,7 @@ pub const InputListWidget = struct {
         try self.getActiveInput().draw(activeChildWindow);
     }
 
-    fn getDimensions(self: *InputListWidget) struct { u16, u16 } {
+    fn getDimensions(self: *InputListWidget, win: Window) struct { u16, u16 } {
         var w: u16 = 0;
         var h: u16 = 0;
 
@@ -141,7 +141,8 @@ pub const InputListWidget = struct {
         w += PADDING_X * 2 + 2;
         h += PADDING_Y * 2 + 2;
 
-        self.maxRuntimeWidth = @max(self.maxRuntimeWidth, w);
+        self.maxRuntimeWidth = @min(@max(self.maxRuntimeWidth, w), win.width);
+        h = @min(h, win.height);
 
         return .{ self.maxRuntimeWidth, h };
     }
