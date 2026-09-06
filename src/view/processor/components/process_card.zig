@@ -19,6 +19,7 @@ pub const ProcessCard = struct {
 
     idLabel: LabelWidget,
     batchLabel: LabelWidget,
+    usernameLabel: LabelWidget,
     opLabel: LabelWidget,
     timeLabel: LabelWidget,
 
@@ -30,6 +31,8 @@ pub const ProcessCard = struct {
 
         self.idLabel.init(alloc);
         self.batchLabel.init(alloc);
+
+        self.usernameLabel.init(alloc);
 
         self.opLabel.init(alloc);
 
@@ -47,6 +50,7 @@ pub const ProcessCard = struct {
 
         try self.idLabel.changeText(try std.mem.concat(alloc, u8, &.{ "ID: ", process.id }));
         try self.batchLabel.changeText(try std.fmt.allocPrint(alloc, " Lote {d} ", .{process.batchIdx + 1}));
+        try self.usernameLabel.changeText(try std.mem.concat(alloc, u8, &.{ "Nombre: ", process.username }));
         try self.opLabel.changeText(try std.mem.concat(alloc, u8, &.{ "OP: ", try process.operation.toString(alloc, process.isDone()) }));
 
         const time_estimated = @divTrunc(process.tme_ms, 1000);
@@ -59,14 +63,14 @@ pub const ProcessCard = struct {
         return MAX_CARD_WIDTH;
     }
     pub fn getHeight(self: *ProcessCard) u16 {
-        if (self.type == .doing) return 5;
+        if (self.type == .doing) return 6;
         return 4;
     }
 
     pub fn draw(self: *ProcessCard, win: Window) void {
         if (self.process == null) return;
 
-        const container = win.child(.{ .x_off = 1, .y_off = 0, .width = @min(win.width - 2, MAX_CARD_WIDTH), .height = 5, .border = .{ .where = .all, .style = .{ .fg = .{ .index = 255 } } } });
+        const container = win.child(.{ .x_off = 1, .y_off = 0, .width = @min(win.width - 2, MAX_CARD_WIDTH), .height = self.getHeight(), .border = .{ .where = .all, .style = .{ .fg = .{ .index = 255 } } } });
 
         const batchLabelWidth = usize_to(u16, self.batchLabel.getWidth()) + 1;
         const idLabelWidth = container.width - batchLabelWidth - 2;
@@ -78,6 +82,11 @@ pub const ProcessCard = struct {
         self.batchLabel.draw(batchChild);
 
         var y_off: i17 = 1;
+        if (self.type == .doing) {
+            const child = container.child(.{ .x_off = 1, .y_off = y_off, .width = container.width - 2, .height = 1 });
+            self.usernameLabel.draw(child);
+            y_off += 1;
+        }
         if (self.type != .pending) {
             const child = container.child(.{ .x_off = 1, .y_off = y_off, .width = container.width - 2, .height = 1 });
             self.opLabel.draw(child);
