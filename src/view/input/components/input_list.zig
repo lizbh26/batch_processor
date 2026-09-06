@@ -3,6 +3,7 @@ const vaxis = @import("vaxis");
 const vxfw = vaxis.vxfw;
 
 const Window = vaxis.Window;
+const Key = vaxis.Key;
 
 const count_utf8 = @import("~").utils.count_utf8;
 const usize_to = @import("~").utils.usize_to;
@@ -66,22 +67,24 @@ pub const InputListWidget = struct {
         return &self.inputs[self.active_field_idx];
     }
 
-    pub fn handleInput(self: *InputListWidget, key: vaxis.Key) !void {
+    pub fn handleInput(self: *InputListWidget, key: Key) !void {
         if (self.isDone()) return;
 
-        const input = self.getActiveInput();
-        input.unfocus();
+        const originalInput = self.getActiveInput();
 
-        if (key.matches(vaxis.Key.backspace, .{}) and input.isEmpty()) {
-            if (self.active_field_idx > 0) self.active_field_idx -= 1;
-        } else if (key.matches(vaxis.Key.enter, .{})) {
-            if (!input.isValid()) return;
-
-            self.active_field_idx += 1;
+        if (key.codepoint == Key.enter) {
+            if (originalInput.isValid())
+                self.active_field_idx += 1;
             if (self.isDone()) return;
+        } else if (key.codepoint == Key.backspace and originalInput.isEmpty()) {
+            if (self.active_field_idx > 0) {
+                self.active_field_idx -= 1;
+            }
         } else {
             try self.getActiveInput().handleInput(key);
         }
+
+        originalInput.unfocus();
         self.getActiveInput().focus();
     }
 
