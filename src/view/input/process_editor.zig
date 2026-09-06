@@ -52,6 +52,7 @@ pub const EditProcessWidget = struct {
         process.id = try alloc.dupe(u8, self.inputList.getInputAt(1));
         process.operation = Operation.fromString(self.inputList.getInputAt(2));
         process.tme_ms = (std.fmt.parseInt(i128, self.inputList.getInputAt(3), 10) catch unreachable) * 1000;
+        process.tt_ms = 0;
 
         self.inputList.reset();
     }
