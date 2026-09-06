@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Controller = @import("controllers/main_controller.zig").Controller;
+const Controller = @import("controller.zig").Controller;
 
 pub fn main(init: std.process.Init) !void {
     var controller: Controller = undefined;

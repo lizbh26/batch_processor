@@ -5,7 +5,7 @@ const zeit = @import("zeit");
 // Vaxis event type
 const Event = union(enum) { key_press: vaxis.Key, winsize: vaxis.Winsize, focus_in };
 
-const MainOrchestrator = @import("../view/main_orchestrator.zig").MainOrchestrator;
+const MainOrchestrator = @import("view/main_orchestrator.zig").MainOrchestrator;
 
 const FRAME_DURATION: zeit.Duration = .{ .microseconds = 16667 }; //60 FPS or 16 ms per frame
 
