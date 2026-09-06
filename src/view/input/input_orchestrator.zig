@@ -42,7 +42,7 @@ pub const InputOrchestratorWidget = struct {
     pub fn tick(self: *InputOrchestratorWidget) !void {
         if (self.ctx.process_count > 0) {
             if (self.edit_widget.isDone()) {
-                try self.edit_widget.finishEdit(self.ctx);
+                try self.edit_widget.finishEdit();
                 self.ctx.current_process_idx += 1;
             }
 

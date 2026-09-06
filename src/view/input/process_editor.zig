@@ -27,6 +27,7 @@ const WidgetConfig = struct { ctx: *ExecutionContext };
 pub const EditProcessWidget = struct {
     arena: Arena,
 
+    ctx: *ExecutionContext,
     inputList: InputListWidget,
 
     pub fn init(self: *EditProcessWidget, alloc: std.mem.Allocator, config: WidgetConfig) void {
@@ -34,6 +35,8 @@ pub const EditProcessWidget = struct {
 
         inputs[1].ctxValidator = CtxValidators.validateUniqueId;
         inputs[1].ctx = config.ctx;
+
+        self.ctx = config.ctx;
         self.inputList.init(&.{ .alloc = alloc, .inputs = &inputs });
     }
 
@@ -41,11 +44,11 @@ pub const EditProcessWidget = struct {
         self.arena.deinit();
     }
 
-    pub fn finishEdit(self: *EditProcessWidget, ctx: *ExecutionContext) !void {
-        const alloc = ctx.arena.allocator();
-        const process = ctx.getCurrentProcess();
+    pub fn finishEdit(self: *EditProcessWidget) !void {
+        const alloc = self.ctx.arena.allocator();
+        const process = self.ctx.getCurrentProcess();
 
-        const batchIdx, _ = ctx.getBatchAndProcessIdx();
+        const batchIdx, _ = self.ctx.getBatchAndProcessIdx();
         process.batchIdx = batchIdx;
 
         process.username = try alloc.dupe(u8, self.inputList.getInputAt(0));
@@ -65,6 +68,7 @@ pub const EditProcessWidget = struct {
     }
 
     pub fn draw(self: *EditProcessWidget, win: Window) !void {
+        try self.inputList.title.changeText(try std.fmt.allocPrint(self.arena.allocator(), "Ingresa el proceso {d} de {d}", .{ self.ctx.current_process_idx + 1, self.ctx.process_count }));
         try self.inputList.draw(win);
     }
 };

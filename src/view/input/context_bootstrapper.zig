@@ -24,6 +24,7 @@ pub const ContextBootstrapperWidget = struct {
     pub fn init(self: *ContextBootstrapperWidget, extern_alloc: std.mem.Allocator) void {
         self.arena = Arena.init(extern_alloc);
         self.inputList.init(&.{ .alloc = self.arena.allocator(), .inputs = &inputs });
+        self.inputList.title.changeText("Ingresa el número de procesos") catch unreachable;
     }
 
     pub fn deinit(self: *ContextBootstrapperWidget) void {

@@ -142,7 +142,7 @@ pub const InputWidget = struct {
         const labelChild = container.child(.{ .x_off = 0, .y_off = 0, .width = labelWidth, .height = 1 });
         self.fieldLabel.draw(labelChild);
 
-        const inputChild = container.child(.{ .x_off = labelWidth + 1, .y_off = 0, .width = inputWidth, .height = 2, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = if (self.focused) 255 else 56 } } } });
+        const inputChild = container.child(.{ .x_off = labelWidth + 1, .y_off = 0, .width = inputWidth, .height = 2, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = if (self.focused) 5 else 8 } } } });
         self.input.draw(inputChild);
 
         try self.errorLabel.changeText(self.validateInput());

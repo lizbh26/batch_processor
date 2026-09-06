@@ -9,6 +9,7 @@ const count_utf8 = @import("~").utils.count_utf8;
 const usize_to = @import("~").utils.usize_to;
 
 const Input = @import("input.zig");
+const Label = @import("../../components/label.zig").LabelWidget;
 
 pub const WidgetConfig = struct { alloc: std.mem.Allocator, inputs: []const Input.WidgetConfig };
 
@@ -21,11 +22,17 @@ fn findLargestLabelSize(arr: []const Input.WidgetConfig) u16 {
     return usize_to(u16, largest);
 }
 
+const PADDING_X = 5;
+const PADDING_Y = 2;
+
 pub const InputListWidget = struct {
     arena: std.heap.ArenaAllocator,
 
     inputs: []Input.InputWidget,
     active_field_idx: usize,
+
+    title: Label,
+    maxRuntimeWidth: u16,
 
     pub fn init(self: *InputListWidget, config: *const WidgetConfig) void {
         self.arena = std.heap.ArenaAllocator.init(config.alloc);
@@ -37,6 +44,9 @@ pub const InputListWidget = struct {
         for (config.inputs, 0..) |inputConfig, i| {
             self.inputs[i].init(alloc, largestLabelSize, inputConfig);
         }
+
+        self.maxRuntimeWidth = 0;
+        self.title.init(alloc);
 
         self.active_field_idx = 0;
         self.getActiveInput().focus();
@@ -72,6 +82,10 @@ pub const InputListWidget = struct {
 
         const originalInput = self.getActiveInput();
 
+        if (key.matchesAny(&.{ Key.tab, Key.left_alt, Key.right_alt }, .{})) {
+            return;
+        }
+
         if (key.codepoint == Key.enter) {
             if (originalInput.isValid())
                 self.active_field_idx += 1;
@@ -89,13 +103,21 @@ pub const InputListWidget = struct {
     }
 
     pub fn draw(self: *InputListWidget, win: Window) !void {
-        var y_offset: i17 = 0;
+        const width, const height = self.getDimensions();
+
+        const container = win.child(.{ .x_off = @divTrunc(win.width - width, 2), .y_off = @divTrunc(win.height - height, 2), .width = width, .height = height + 2, .border = .{ .where = .all, .style = .{ .fg = .{ .index = 255 } } } });
+
+        const titleWidth = usize_to(u16, self.title.getWidth());
+        const titleChild = container.child(.{ .x_off = @divTrunc(container.width - titleWidth, 2), .y_off = 1, .width = titleWidth, .height = 1 });
+        self.title.draw(titleChild);
+
         var activeChildWindow: Window = undefined;
 
+        var y_offset: i17 = PADDING_Y + 2;
         for (0..self.inputs.len) |i| {
             const input = &self.inputs[i];
 
-            const child = win.child(.{ .x_off = 1, .y_off = y_offset, .width = win.width - 2, .height = input.getHeight() });
+            const child = container.child(.{ .x_off = PADDING_X, .y_off = y_offset, .width = win.width - 2, .height = input.getHeight() });
             y_offset += input.getHeight() + 1;
 
             if (i == self.active_field_idx) {
@@ -106,5 +128,21 @@ pub const InputListWidget = struct {
             try input.draw(child);
         }
         try self.getActiveInput().draw(activeChildWindow);
+    }
+
+    fn getDimensions(self: *InputListWidget) struct { u16, u16 } {
+        var w: u16 = 0;
+        var h: u16 = 0;
+
+        for (self.inputs) |*input| {
+            w = @max(input.getWidth(), w);
+            h += input.getHeight() + 1;
+        }
+        w += PADDING_X * 2 + 2;
+        h += PADDING_Y * 2 + 2;
+
+        self.maxRuntimeWidth = @max(self.maxRuntimeWidth, w);
+
+        return .{ self.maxRuntimeWidth, h };
     }
 };
