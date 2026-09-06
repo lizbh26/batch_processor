@@ -72,7 +72,7 @@ pub const InputListWidget = struct {
         const input = self.getActiveInput();
         input.unfocus();
 
-        if (key.matches(vaxis.Key.delete, .{}) and input.isEmpty()) {
+        if (key.matches(vaxis.Key.backspace, .{}) and input.isEmpty()) {
             if (self.active_field_idx > 0) self.active_field_idx -= 1;
         } else if (key.matches(vaxis.Key.enter, .{})) {
             if (!input.isValid()) return;
