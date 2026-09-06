@@ -63,14 +63,21 @@ pub const ProcessorOrchestratorWidget = struct {
     }
 
     pub fn draw(self: *ProcessorOrchestratorWidget, win: Window) !void {
+        try self.drawHeader(win);
+        try self.drawPanels(win);
+        win.hideCursor();
+    }
+
+    fn drawHeader(self: *ProcessorOrchestratorWidget, win: Window) !void {
         const currBatchIdx, _ = self.ctx.getBatchAndProcessIdx();
-        const remainingBatches = self.ctx.batches.len - currBatchIdx;
+        const remainingBatches = self.ctx.batches.len - currBatchIdx - 1;
 
         const plural_S = if (remainingBatches == 1) "" else "s";
-        try self.header.title.changeText(if (self.ctx.isComplete()) "Procesamiento terminado" else try std.fmt.allocPrint(self.arena.allocator(), "{d} lote{s} pendiente{s} ({d}/{d})", .{ remainingBatches, plural_S, plural_S, currBatchIdx + 1, self.ctx.batches.len }));
+        try self.header.title.changeText(if (remainingBatches > 0) try std.fmt.allocPrint(self.arena.allocator(), "{d} lote{s} pendiente{s}", .{ remainingBatches, plural_S, plural_S }) else "");
         const headerContainer = win.child(.{ .x_off = 0, .y_off = 0, .width = win.width, .height = 2, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = 255 } } } });
         try self.header.draw(headerContainer);
-
+    }
+    fn drawPanels(self: *ProcessorOrchestratorWidget, win: Window) !void {
         const panelWidth = win.width / 3;
         const mainContainer = win.child(.{ .x_off = 0, .y_off = 3, .width = win.width, .height = win.height - 2 });
 
@@ -82,7 +89,5 @@ pub const ProcessorOrchestratorWidget = struct {
 
         const completedProcessesPanelChild = mainContainer.child(.{ .x_off = panelWidth * 2 + 1, .y_off = 0, .width = panelWidth - 2, .height = mainContainer.height });
         try self.completedProcessesPanel.draw(completedProcessesPanelChild);
-
-        win.hideCursor();
     }
 };
