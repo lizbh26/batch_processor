@@ -78,16 +78,16 @@ pub const ProcessorOrchestratorWidget = struct {
         try self.header.draw(headerContainer);
     }
     fn drawPanels(self: *ProcessorOrchestratorWidget, win: Window) !void {
-        const panelWidth = win.width / 3;
+        const panelWidth = @divFloor(win.width, 3);
         const mainContainer = win.child(.{ .x_off = 0, .y_off = 3, .width = win.width, .height = win.height - 2 });
 
-        const pendingProcessesPanelChild = mainContainer.child(.{ .x_off = 0, .y_off = 0, .width = panelWidth - 2, .height = mainContainer.height });
+        const pendingProcessesPanelChild = mainContainer.child(.{ .x_off = 0, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
         try self.pendingProcessesPanel.draw(pendingProcessesPanelChild);
 
-        const currentProcessPanelChild = mainContainer.child(.{ .x_off = panelWidth + 1, .y_off = 0, .width = panelWidth - 2, .height = mainContainer.height });
+        const currentProcessPanelChild = mainContainer.child(.{ .x_off = panelWidth + 1, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
         try self.currentProcessPanel.draw(currentProcessPanelChild);
 
-        const completedProcessesPanelChild = mainContainer.child(.{ .x_off = panelWidth * 2 + 1, .y_off = 0, .width = panelWidth - 2, .height = mainContainer.height });
+        const completedProcessesPanelChild = mainContainer.child(.{ .x_off = panelWidth * 2 + 1, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
         try self.completedProcessesPanel.draw(completedProcessesPanelChild);
     }
 };

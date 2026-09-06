@@ -10,6 +10,8 @@ const Process = @import("~").models.Process.Process;
 const usize_to = @import("~").utils.usize_to;
 
 const MAX_CARD_WIDTH = 40;
+const PADDING_X_INNER = 1;
+
 pub const CardType = enum { pending, doing, completed };
 pub const ProcessCard = struct {
     arena: std.heap.ArenaAllocator,
@@ -59,8 +61,8 @@ pub const ProcessCard = struct {
         try self.timeLabel.changeText(try std.fmt.allocPrint(alloc, "TME: {d}  TT: {d}  TR: {d}", .{ time_estimated, time_taken, time_remaining }));
     }
 
-    pub fn getWidth(_: *ProcessCard) u16 {
-        return MAX_CARD_WIDTH;
+    pub fn getWidth(_: *ProcessCard, win: Window) u16 {
+        return @min(win.width, MAX_CARD_WIDTH);
     }
     pub fn getHeight(self: *ProcessCard) u16 {
         if (self.type == .doing) return 6;
@@ -70,12 +72,12 @@ pub const ProcessCard = struct {
     pub fn draw(self: *ProcessCard, win: Window) void {
         if (self.process == null) return;
 
-        const container = win.child(.{ .x_off = 1, .y_off = 0, .width = @min(win.width - 2, MAX_CARD_WIDTH), .height = self.getHeight(), .border = .{ .where = .all, .style = .{ .fg = .{ .index = 255 } } } });
+        const container = win.child(.{ .x_off = 0, .y_off = 0, .width = self.getWidth(win), .height = self.getHeight(), .border = .{ .where = .all, .style = .{ .fg = .{ .index = 255 } } } });
 
         const batchLabelWidth = usize_to(u16, self.batchLabel.getWidth()) + 1;
-        const idLabelWidth = container.width - batchLabelWidth - 2;
+        const idLabelWidth = container.width - batchLabelWidth - PADDING_X_INNER * 2;
 
-        const idChild = container.child(.{ .x_off = 1, .y_off = 0, .width = idLabelWidth, .height = 1 });
+        const idChild = container.child(.{ .x_off = PADDING_X_INNER, .y_off = 0, .width = idLabelWidth, .height = 1 });
         self.idLabel.draw(idChild);
 
         const batchChild = container.child(.{ .x_off = idLabelWidth + 1, .y_off = 0, .width = batchLabelWidth, .height = 1 });
@@ -83,17 +85,17 @@ pub const ProcessCard = struct {
 
         var y_off: i17 = 1;
         if (self.type == .doing) {
-            const child = container.child(.{ .x_off = 1, .y_off = y_off, .width = container.width - 2, .height = 1 });
+            const child = container.child(.{ .x_off = PADDING_X_INNER, .y_off = y_off, .width = container.width - PADDING_X_INNER * 2, .height = 1 });
             self.usernameLabel.draw(child);
             y_off += 1;
         }
         if (self.type != .pending) {
-            const child = container.child(.{ .x_off = 1, .y_off = y_off, .width = container.width - 2, .height = 1 });
+            const child = container.child(.{ .x_off = PADDING_X_INNER, .y_off = y_off, .width = container.width - PADDING_X_INNER * 2, .height = 1 });
             self.opLabel.draw(child);
             y_off += 1;
         }
         if (self.type != .completed) {
-            const child = container.child(.{ .x_off = 1, .y_off = y_off, .width = container.width - 2, .height = 1 });
+            const child = container.child(.{ .x_off = PADDING_X_INNER, .y_off = y_off, .width = container.width - PADDING_X_INNER * 2, .height = 1 });
             self.timeLabel.draw(child);
         }
     }

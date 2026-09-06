@@ -68,7 +68,7 @@ pub const CurrentProcessExecutionWidget = struct {
 
         if (!self.ctx.isComplete()) {
             try self.card.updateProcess(self.ctx.getCurrentProcess());
-            const cardChild = win.child(.{ .x_off = @divTrunc(win.width - self.card.getWidth(), 2), .y_off = 1, .width = win.width - 2, .height = self.card.getHeight() });
+            const cardChild = win.child(.{ .x_off = @divTrunc(win.width - self.card.getWidth(win), 2), .y_off = 1, .width = win.width - 2, .height = self.card.getHeight() });
             self.card.draw(cardChild);
         }
     }

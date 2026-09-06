@@ -79,8 +79,9 @@ pub const CompletedProcessesWidget = struct {
 
             try card.updateProcess(p);
 
+            const width = card.getWidth(win);
             const height = card.getHeight();
-            const child = win.child(.{ .x_off = @divTrunc((win.width - card.getWidth()), 2), .y_off = y_off, .width = card.getWidth(), .height = height });
+            const child = win.child(.{ .x_off = @divTrunc((win.width - width), 2), .y_off = y_off, .width = width, .height = height });
             card.draw(child);
 
             y_off += height;
