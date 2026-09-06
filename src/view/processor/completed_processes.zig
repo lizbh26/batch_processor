@@ -48,7 +48,7 @@ pub const CompletedProcessesWidget = struct {
 
     pub fn handleInput(self: *CompletedProcessesWidget, key: vaxis.Key) void {
         if (key.matches(vaxis.Key.down, .{})) {
-            if (self.cardOffset < self.ctx.current_process_idx - 1) self.cardOffset += 1;
+            if (self.ctx.current_process_idx - self.cardOffset > 1) self.cardOffset += 1;
         } else if (key.matches(vaxis.Key.up, .{})) {
             if (self.cardOffset > 0) self.cardOffset -= 1;
         }
