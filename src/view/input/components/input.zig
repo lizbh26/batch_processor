@@ -49,6 +49,7 @@ pub const InputWidget = struct {
         self.fieldLabel.changeText(padded_label) catch unreachable;
 
         self.errorLabel.init(alloc);
+        self.errorLabel.updateStyle(.{ .fg = .{ .index = 1 } });
 
         self.input = TextInput.init(alloc);
         self.focused = false;

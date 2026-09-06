@@ -40,6 +40,10 @@ pub const LabelWidget = struct {
         try self.buffer.append(self.alloc, .{ .bytes = newText });
     }
 
+    pub fn updateStyle(self: *LabelWidget, style: vaxis.Style) void {
+        self.buffer.updateStyle(self.alloc, .{ .begin = 0, .end = self.buffer.style_map.size, .style = style }) catch {};
+    }
+
     pub fn draw(self: *LabelWidget, win: Window) void {
         self.view.draw(win, self.buffer);
     }
