@@ -99,7 +99,7 @@ pub const InputWidget = struct {
         switch (self.config.type) {
             .text => return Validators.validateStringField(inputText),
             .number => return Validators.validateNaturalNumberField(inputText),
-            else => return "",
+            .operation => return Validators.validateOperation(inputText),
         }
     }
 

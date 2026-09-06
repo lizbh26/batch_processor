@@ -1,3 +1,5 @@
+const Operation = @import("~").models.Operation;
+
 fn isNumber(char: u8) bool {
     return (char >= '0' and char <= '9');
 }
@@ -29,4 +31,16 @@ pub fn validateNaturalNumberField(str: []const u8) []const u8 {
     if (!isNotZero(str)) return "No puede ser 0";
 
     return "";
+}
+
+pub fn validateOperation(str: []const u8) []const u8 {
+    if (checkEmpty(str)) |msg| return msg;
+
+    if (Operation.fromString(str)) |_| {
+        return "";
+    } else |err| switch (err) {
+        Operation.ParsingError.Overflow, Operation.ParsingError.InvalidCharacter => return "Los operandos deben ser números enteros",
+        Operation.ParsingError.DivisionByZero => return "No es posible dividir entre 0",
+        Operation.ParsingError.InvalidOperation => return "Esta no es una operación válida",
+    }
 }

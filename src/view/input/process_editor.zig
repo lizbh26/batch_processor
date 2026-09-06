@@ -8,7 +8,7 @@ const Arena = std.heap.ArenaAllocator;
 const usize_to = @import("~").utils.usize_to;
 
 const Process = @import("~").models.Process.Process;
-const Operation = @import("~").models.Operation.Operation;
+const Operation = @import("~").models.Operation;
 const ExecutionContext = @import("~").models.Context.ExecutionContext;
 
 const InputListWidget = @import("components/input_list.zig").InputListWidget;
@@ -53,7 +53,7 @@ pub const EditProcessWidget = struct {
 
         process.username = try alloc.dupe(u8, self.inputList.getInputAt(0));
         process.id = try alloc.dupe(u8, self.inputList.getInputAt(1));
-        process.operation = Operation.fromString(self.inputList.getInputAt(2));
+        process.operation = Operation.fromString(self.inputList.getInputAt(2)) catch unreachable;
         process.tme_ms = (std.fmt.parseInt(i128, self.inputList.getInputAt(3), 10) catch unreachable) * 1000;
         process.tt_ms = 0;
 
