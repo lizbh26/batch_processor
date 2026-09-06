@@ -12,7 +12,7 @@ const Operation = @import("~").models.Operation.Operation;
 const ExecutionContext = @import("~").models.Context.ExecutionContext;
 
 const InputListWidget = @import("components/input_list.zig").InputListWidget;
-const Input = @import("components/input_with_label.zig");
+const Input = @import("components/input.zig");
 
 const CtxValidators = @import("utils/ctx_validators.zig");
 

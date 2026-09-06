@@ -8,7 +8,7 @@ const Key = vaxis.Key;
 const count_utf8 = @import("~").utils.count_utf8;
 const usize_to = @import("~").utils.usize_to;
 
-const Input = @import("input_with_label.zig");
+const Input = @import("input.zig");
 
 pub const WidgetConfig = struct { alloc: std.mem.Allocator, inputs: []const Input.WidgetConfig };
 
