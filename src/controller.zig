@@ -7,6 +7,9 @@ const Event = union(enum) { key_press: vaxis.Key, winsize: vaxis.Winsize, focus_
 
 const MainOrchestrator = @import("view/main_orchestrator.zig").MainOrchestrator;
 
+pub const MIN_SCREEN_WIDTH = 120;
+pub const MIN_SCREEN_HEIGHT = 25;
+
 const FRAME_DURATION: zeit.Duration = .{ .microseconds = 16667 }; //60 FPS or 16 ms per frame
 
 pub const Controller = struct {
@@ -52,12 +55,14 @@ pub const Controller = struct {
 
         const writer = self.tty.writer();
 
-        try self.vx.enterAltScreen(writer);
-        try self.vx.setMouseMode(writer, false);
-
         // Sends queries to terminal to detect certain features. This should
         // _always_ be called, but is left to the application to decide when
         try self.vx.queryTerminal(writer, .fromSeconds(1));
+
+        try self.vx.enterAltScreen(writer);
+        defer self.vx.exitAltScreen(writer) catch {};
+
+        try self.vx.setMouseMode(writer, false);
 
         var frameStart = self.getNow();
 
@@ -71,7 +76,6 @@ pub const Controller = struct {
 
             try self.orchestrator.tick(frameStart);
             try self.draw();
-
             const now = self.getNow();
             try self.waitRemainingFrameTime(frameStart, now);
         }
@@ -119,6 +123,8 @@ pub const Controller = struct {
         // vaxis double buffers the screen. This new frame will be compared to
         // the old and only updated cells will be drawn
         win.clear();
+
+        if (win.width < MIN_SCREEN_WIDTH or win.height < MIN_SCREEN_HEIGHT) return error.TerminalSize;
 
         try self.orchestrator.draw(win);
 
