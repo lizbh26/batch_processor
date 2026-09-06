@@ -59,7 +59,7 @@ pub const InputWidget = struct {
     }
 
     pub fn reset(self: *InputWidget) void {
-        self.input.reset();
+        self.input.clearAndFree();
     }
 
     pub fn handleInput(self: *InputWidget, key: vaxis.Key) !void {
