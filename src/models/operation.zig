@@ -40,4 +40,8 @@ pub const Operation = struct {
         }
         return op;
     }
+
+    pub fn fromString(_: []const u8) Operation {
+        return .{ .a = 5, .operand = .sum, .b = -54, .result = null };
+    }
 };

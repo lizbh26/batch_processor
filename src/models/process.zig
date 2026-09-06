@@ -5,9 +5,11 @@ pub const Process = struct {
     id: []const u8,
     batchIdx: usize,
 
+    username: []const u8,
+
     operation: Operation.Operation,
     tme_ms: i128,
-    tt_ms: i128,
+    tt_ms: i128 = 0,
 
     pub fn seed(self: *Process, alloc: std.mem.Allocator, data: struct { id: u16, batchIdx: usize }) void {
         self.id = std.fmt.allocPrint(alloc, "{d}", .{data.id}) catch "ID COULD NOT BE GENERATED";

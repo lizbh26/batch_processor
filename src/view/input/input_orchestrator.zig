@@ -31,11 +31,7 @@ pub const InputOrchestratorWidget = struct {
         extern_alloc.destroy(self);
     }
 
-    pub fn proceedToProcessEditing(self: *InputOrchestratorWidget, ctx: ExecutionContext) void {
-        self.ctx = ctx;
-    }
-
-    pub fn handle_input(self: *InputOrchestratorWidget, key: vaxis.Key) !void {
+    pub fn handleInput(self: *InputOrchestratorWidget, key: vaxis.Key) !void {
         if (self.ctx.process_count > 0) {
             try self.edit_widget.handleInput(key);
         } else {
@@ -45,7 +41,12 @@ pub const InputOrchestratorWidget = struct {
 
     pub fn tick(self: *InputOrchestratorWidget) !void {
         if (self.ctx.process_count > 0) {
-            self.edit_widget.setProcessToEdit(self.ctx.getCurrentProcess());
+            if (self.edit_widget.isDone()) {
+                try self.edit_widget.finishEdit(self.ctx);
+                self.ctx.current_process_idx += 1;
+            }
+
+            if (self.ctx.isComplete()) return;
         } else {
             if (self.bootstrap_widget.isDone()) {
                 try self.bootstrap_widget.prepareContext(self.ctx);

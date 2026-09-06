@@ -25,6 +25,7 @@ pub const MainOrchestrator = struct {
         self.ctx.init(alloc);
 
         self.inputOrchestrator.init(alloc, &self.ctx);
+        self.processorOrchestrator.init(alloc, &self.ctx);
 
         self.phase = .input;
     }
@@ -35,6 +36,7 @@ pub const MainOrchestrator = struct {
     }
 
     pub fn switchToProcessorPhase(self: *MainOrchestrator) !void {
+        self.ctx.current_process_idx = 0;
         const alloc = self.arena.allocator();
         self.inputOrchestrator.deinit(alloc);
         self.phase = .processor;
@@ -42,14 +44,20 @@ pub const MainOrchestrator = struct {
 
     pub fn handleInput(self: *MainOrchestrator, key: vaxis.Key) !void {
         switch (self.phase) {
-            .input => try self.inputOrchestrator.handle_input(key),
+            .input => try self.inputOrchestrator.handleInput(key),
             else => {},
         }
     }
 
     pub fn tick(self: *MainOrchestrator, now: zeit.Instant) !void {
         switch (self.phase) {
-            .input => try self.inputOrchestrator.tick(),
+            .input => {
+                try self.inputOrchestrator.tick();
+                if (self.ctx.process_count > 0 and self.ctx.isComplete()) {
+                    try self.switchToProcessorPhase();
+                    try self.processorOrchestrator.run(now);
+                }
+            },
             .processor => try self.processorOrchestrator.tick(now),
         }
     }

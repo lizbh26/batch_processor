@@ -8,6 +8,8 @@ const Arena = std.heap.ArenaAllocator;
 const usize_to = @import("~").utils.usize_to;
 
 const Process = @import("~").models.Process.Process;
+const Operation = @import("~").models.Operation.Operation;
+const ExecutionContext = @import("~").models.Context.ExecutionContext;
 
 const InputListWidget = @import("components/input_list.zig").InputListWidget;
 const Input = @import("components/input_with_label.zig");
@@ -22,7 +24,6 @@ const inputs = [_]Input.WidgetConfig{
 pub const EditProcessWidget = struct {
     arena: Arena,
 
-    current_process: *Process,
     inputList: InputListWidget,
 
     pub fn init(self: *EditProcessWidget, alloc: std.mem.Allocator) void {
@@ -34,10 +35,22 @@ pub const EditProcessWidget = struct {
         self.arena.deinit();
     }
 
-    pub fn setProcessToEdit(self: *EditProcessWidget, p: *Process) void {
-        if (p == self.current_process) return;
-        self.current_process = p;
+    pub fn finishEdit(self: *EditProcessWidget, ctx: *ExecutionContext) !void {
+        const alloc = ctx.arena.allocator();
+        const process = ctx.getCurrentProcess();
+
+        const batchIdx, _ = ctx.getBatchAndProcessIdx();
+        process.batchIdx = batchIdx;
+
+        process.username = try alloc.dupe(u8, self.inputList.getInputAt(0));
+        process.id = try alloc.dupe(u8, self.inputList.getInputAt(1));
+        process.operation = Operation.fromString(self.inputList.getInputAt(2));
+        process.tme_ms = (std.fmt.parseInt(i128, self.inputList.getInputAt(3), 10) catch unreachable) * 1000;
+
         self.inputList.reset();
+    }
+    pub fn isDone(self: *EditProcessWidget) bool {
+        return self.inputList.isDone();
     }
 
     pub fn handleInput(self: *EditProcessWidget, key: vaxis.Key) !void {
