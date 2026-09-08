@@ -18,7 +18,7 @@ const CtxValidators = @import("utils/ctx_validators.zig");
 
 var inputs = [_]Input.WidgetConfig{
     .{ .label = "Nombre del programador", .maxInputSize = 40, .type = .text },
-    .{ .label = "ID del programa", .maxInputSize = 20, .type = .text },
+    .{ .label = "ID del programa", .maxInputSize = 20, .type = .number },
     .{ .label = "Operación", .maxInputSize = 20, .type = .operation },
     .{ .label = "Tiempo Máximo Estimado", .maxInputSize = 3, .type = .number },
 };
