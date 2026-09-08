@@ -93,8 +93,10 @@ pub const InputWidget = struct {
         const inputText = self.getInputText(alloc);
         defer alloc.free(inputText);
 
-        if (self.config.ctxValidator != null and self.config.ctx != null)
-            return self.config.ctxValidator.?(inputText, self.config.ctx.?);
+        if (self.config.ctxValidator != null and self.config.ctx != null) {
+            const msg = self.config.ctxValidator.?(inputText, self.config.ctx.?);
+            if (msg.len > 0) return msg;
+        }
 
         switch (self.config.type) {
             .text => return Validators.validateStringField(inputText),
