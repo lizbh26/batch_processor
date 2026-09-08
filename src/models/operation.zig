@@ -1,11 +1,29 @@
 const std = @import("std");
 
+const generateRand = @import("../utils/random_number.zig").generateRandomNumber;
+
 pub const Operand = enum { sum, diff, product, division, remainder };
 pub const Operation = struct {
     a: i32 = 0,
     b: i32 = 0,
     operand: Operand = Operand.sum,
     result: ?f32,
+
+    pub fn seed(self: *Operation) void {
+        self.a = generateRand(i32, -9999, 9999);
+        self.b = generateRand(i32, -9999, 9999);
+
+        switch (generateRand(u8, 1, 5)) {
+            1 => self.operand = .sum,
+            2 => self.operand = .diff,
+            3 => self.operand = .product,
+            4 => self.operand = .division,
+            5 => self.operand = .division,
+            else => unreachable,
+        }
+
+        self.result = null;
+    }
 
     pub fn calculate(self: *Operation) void {
         if (self.result != null) return;
@@ -43,6 +61,10 @@ pub const Operation = struct {
             op = try std.mem.concat(alloc, u8, &.{ op, res });
         }
         return op;
+    }
+
+    pub fn isInvalid(self: *Operation) bool {
+        return (self.operand == .division and self.b == 0);
     }
 };
 

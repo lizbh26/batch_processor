@@ -1,8 +1,10 @@
 const std = @import("std");
 const Operation = @import("operation.zig");
 
+const generateRand = @import("../utils/random_number.zig").generateRandomNumber;
+
 pub const Process = struct {
-    id: []const u8,
+    id: u16,
     batchIdx: usize,
 
     username: []const u8,
@@ -11,11 +13,11 @@ pub const Process = struct {
     tme_ms: i128,
     tt_ms: i128 = 0,
 
-    pub fn seed(self: *Process, alloc: std.mem.Allocator, data: struct { id: u16, batchIdx: usize }) void {
-        self.id = std.fmt.allocPrint(alloc, "{d}", .{data.id}) catch "ID COULD NOT BE GENERATED";
+    pub fn seed(self: *Process, data: struct { id: u16, batchIdx: usize }) void {
+        self.id = data.id;
         self.batchIdx = data.batchIdx;
-        self.operation = .{ .a = 65, .b = 43, .operand = .sum, .result = null };
-        self.tme_ms = 2000;
+        self.operation.seed();
+        self.tme_ms = generateRand(u8, 4, 12) * 1000;
         self.tt_ms = 0;
     }
 
