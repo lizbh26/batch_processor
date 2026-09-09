@@ -18,13 +18,13 @@ pub const MainOrchestrator = struct {
 
     ctx: ExecutionContext,
 
-    pub fn init(self: *MainOrchestrator, extern_alloc: std.mem.Allocator) void {
+    pub fn init(self: *MainOrchestrator, extern_alloc: std.mem.Allocator, random: std.Random) void {
         self.arena = std.heap.ArenaAllocator.init(extern_alloc);
         const alloc = self.arena.allocator();
 
         self.ctx.init(alloc);
 
-        self.inputOrchestrator.init(alloc, &self.ctx);
+        self.inputOrchestrator.init(alloc, random, &self.ctx);
         self.processorOrchestrator.init(alloc, &self.ctx);
 
         self.phase = .input;
@@ -53,7 +53,7 @@ pub const MainOrchestrator = struct {
         switch (self.phase) {
             .input => {
                 try self.inputOrchestrator.tick();
-                if (self.ctx.process_count > 0 and self.ctx.isComplete()) {
+                if (self.ctx.process_count > 0) {
                     try self.switchToProcessorPhase(now);
                 }
             },

@@ -15,6 +15,7 @@ const FRAME_DURATION: zeit.Duration = .{ .microseconds = 16667 }; //60 FPS or 16
 pub const Controller = struct {
     arena: std.heap.ArenaAllocator,
     io: std.Io,
+    randomSource: std.Random.IoSource,
 
     buffer: [1024]u8,
     tty: vaxis.Tty,
@@ -40,7 +41,8 @@ pub const Controller = struct {
 
         self.loop = .init(self.io, &self.tty, &self.vx);
 
-        self.orchestrator.init(alloc);
+        self.randomSource.io = self.io;
+        self.orchestrator.init(alloc, self.randomSource.interface());
     }
 
     pub fn deinit(self: *Controller) void {

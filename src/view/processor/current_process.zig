@@ -59,7 +59,7 @@ pub const CurrentProcessExecutionWidget = struct {
     pub fn draw(self: *CurrentProcessExecutionWidget, win: Window) !void {
         const alloc = self.arena.allocator();
 
-        const msg: []const u8 = if (self.ctx.isComplete()) "Sin procesos a ejecutar" else try std.fmt.allocPrint(alloc, "Proceso en ejecución: {s}", .{self.ctx.getCurrentProcess().id});
+        const msg: []const u8 = if (self.ctx.isComplete()) "Sin procesos a ejecutar" else try std.fmt.allocPrint(alloc, "Proceso en ejecución: {d}", .{self.ctx.getCurrentProcess().id});
         try self.title.changeText(msg);
 
         const titleWidth = usize_to(u16, self.title.getWidth());

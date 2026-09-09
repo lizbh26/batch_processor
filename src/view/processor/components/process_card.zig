@@ -50,7 +50,7 @@ pub const ProcessCard = struct {
         const alloc = self.arena.allocator();
         self.process = process;
 
-        try self.idLabel.changeText(try std.mem.concat(alloc, u8, &.{ "ID: ", process.id }));
+        try self.idLabel.changeText(try std.fmt.allocPrint(alloc, "ID: {d}", .{process.id}));
         try self.batchLabel.changeText(try std.fmt.allocPrint(alloc, " Lote {d} ", .{process.batchIdx + 1}));
         try self.usernameLabel.changeText(try std.mem.concat(alloc, u8, &.{ "Nombre: ", process.username }));
         try self.opLabel.changeText(try std.mem.concat(alloc, u8, &.{ "OP: ", try process.operation.toString(alloc, process.isDone()) }));

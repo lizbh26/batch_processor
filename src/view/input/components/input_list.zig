@@ -127,7 +127,8 @@ pub const InputListWidget = struct {
 
             try input.draw(child);
         }
-        try self.getActiveInput().draw(activeChildWindow);
+        if (!self.isDone())
+            try self.getActiveInput().draw(activeChildWindow);
     }
 
     fn getDimensions(self: *InputListWidget, win: Window) struct { u16, u16 } {
