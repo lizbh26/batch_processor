@@ -13,7 +13,7 @@ pub const Process = struct {
         self.id = data.id;
         self.batchIdx = data.batchIdx;
         self.operation.seed(random);
-        self.tme_ms = random.intRangeAtMost(i128, 4, 8) * 1000;
+        self.tme_ms = random.intRangeAtMost(i128, 1, 5) * 1000;
         self.tt_ms = 0;
     }
 
