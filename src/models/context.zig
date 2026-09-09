@@ -8,6 +8,8 @@ pub const ExecutionContext = struct {
     arena: std.heap.ArenaAllocator,
 
     batches: []Batch.Batch,
+    current_batch: u16,
+
     process_count: u16,
 
     current_process_idx: u16,
@@ -35,42 +37,37 @@ pub const ExecutionContext = struct {
         }
 
         self.process_count = pCount;
-        self.current_process_idx = 0;
-    }
-
-    fn getBatchAndProcessIdxForGlobalIdx(_: *ExecutionContext, idx: u16) struct { u16, u16 } {
-        var batchIdx: u16 = 0;
-        var processIdx: u16 = idx;
-        while (processIdx >= Batch.BATCH_SIZE) {
-            processIdx -= Batch.BATCH_SIZE;
-            batchIdx += 1;
-        }
-        return .{ batchIdx, processIdx };
+        self.current_batch = 0;
     }
 
     pub fn getBatchAndProcessIdx(self: *ExecutionContext) struct { u16, u16 } {
-        return self.getBatchAndProcessIdxForGlobalIdx(self.current_process_idx);
+        return .{ self.current_batch, self.getCurrentBatch().current };
     }
-
     pub fn getCurrentBatch(self: *ExecutionContext) *Batch.Batch {
-        const batchIdx, _ = self.getBatchAndProcessIdx();
-        return &self.batches[batchIdx];
+                return &self.batches[self.current_batch];
     }
     pub fn getCurrentProcess(self: *ExecutionContext) *Process {
-        const batchIdx, const processIdx = self.getBatchAndProcessIdx();
-        return &self.batches[batchIdx].queue[processIdx].?;
+        return self.getCurrentBatch().getCurrent() catch unreachable;
+    }
+    pub fn getCompletedProcesses(self: *ExecutionContext) u16 {
+        return self.current_batch + self.getCurrentBatch().done;
     }
     pub fn getProcessWithGlobalIdx(self: *ExecutionContext, idx: u16) !*Process {
-        if (idx >= self.process_count) return error.OverFlow;
-        const batchIdx, const processIdx = self.getBatchAndProcessIdxForGlobalIdx(idx);
-        return &self.batches[batchIdx].queue[processIdx].?;
+        if (idx > self.process_count) return error.OverFlow;
+        const batchIdx, const processIdx = divideWithRemainder(u16, idx, Batch.BATCH_SIZE);
+        return &(self.batches[batchIdx].queue[processIdx].?);
     }
     pub fn moveToNextProcess(self: *ExecutionContext) void {
-        self.getCurrentProcess().operation.calculate();
-        self.current_process_idx += 1;
+const currBatch = self.getCurrentBatch();
+        (currBatch.getCurrent() catch unreachable).operation.calculate();
+
+        currBatch.moveToNext() catch unreachable;
+        if (currBatch.isDone()) {
+        self.current_batch += 1;
+}
     }
     pub fn isComplete(self: *ExecutionContext) bool {
-        return self.process_count == self.current_process_idx;
+        return self.current_batch == self.batches.len;
     }
 
     pub fn isUniqueId(self: *ExecutionContext, id: []const u8) bool {
@@ -82,3 +79,14 @@ pub const ExecutionContext = struct {
         return true;
     }
 };
+
+fn divideWithRemainder(comptime T: type, a: T, b: T) struct { T, T } {
+    var div: T = 0;
+    var rem = a;
+
+    while (rem >= b) {
+        rem -= b;
+        div += 1;
+    }
+    return .{ div, rem };
+}
