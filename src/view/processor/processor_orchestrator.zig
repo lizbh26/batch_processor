@@ -85,13 +85,10 @@ pub const ProcessorOrchestratorWidget = struct {
     }
 
     fn drawHeader(self: *ProcessorOrchestratorWidget, win: Window) !void {
-        if (!self.ctx.isComplete()) {
-            const currBatchIdx, _ = self.ctx.getBatchAndProcessIdx();
-            const remainingBatches = self.ctx.batches.len - currBatchIdx - 1;
+        if (!self.ctx.isComplete()) {}
 
-            const plural_S = if (remainingBatches == 1) "" else "s";
-            try self.header.title.changeText(if (remainingBatches > 0) try std.fmt.allocPrint(self.arena.allocator(), "{d} lote{s} pendiente{s}", .{ remainingBatches, plural_S, plural_S }) else "");
-        }
+        const remainingBatches = self.ctx.batches.len - self.ctx.current_batch - 1;
+        try self.header.setRemainingBatchesLabel(remainingBatches);
 
         const headerContainer = win.child(.{ .x_off = 0, .y_off = 0, .width = win.width, .height = 2, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = 255 } } } });
         try self.header.draw(headerContainer);

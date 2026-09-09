@@ -36,6 +36,11 @@ pub const Header = struct {
         try self.timerWidget.tick(now);
     }
 
+    pub fn setRemainingBatchesLabel(self: *Header, remainingBatches: usize) !void {
+        const plural_S = if (remainingBatches == 1) "" else "s";
+        try self.title.changeText(if (remainingBatches > 0) try std.fmt.allocPrint(self.arena.allocator(), "{d} lote{s} pendiente{s}", .{ remainingBatches, plural_S, plural_S }) else "");
+    }
+
     pub fn draw(self: *Header, win: Window) !void {
         const titleWidth = usize_to(u16, self.title.getWidth());
         const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
