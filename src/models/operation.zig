@@ -1,7 +1,5 @@
 const std = @import("std");
 
-const generateRand = @import("../utils/random_number.zig").generateRandomNumber;
-
 pub const Operand = enum { sum, diff, product, division, remainder };
 pub const Operation = struct {
     a: i32 = 0,
@@ -9,11 +7,11 @@ pub const Operation = struct {
     operand: Operand = Operand.sum,
     result: ?f32,
 
-    pub fn seed(self: *Operation) void {
-        self.a = generateRand(i32, -9999, 9999);
-        self.b = generateRand(i32, -9999, 9999);
+    pub fn seed(self: *Operation, random: std.Random) void {
+        self.a = random.intRangeAtMost(i32, -9999, 9999);
+        self.b = random.intRangeAtMost(i32, -9999, 9999);
 
-        switch (generateRand(u8, 1, 5)) {
+        switch (random.intRangeAtMost(u8, 1, 5)) {
             1 => self.operand = .sum,
             2 => self.operand = .diff,
             3 => self.operand = .product,

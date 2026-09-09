@@ -23,17 +23,20 @@ pub const ExecutionContext = struct {
         self.arena.deinit();
     }
 
-    pub fn createBatches(self: *ExecutionContext, pCount: u16) !void {
+    pub fn createBatches(self: *ExecutionContext, random: std.Random, pCount: u16) !void {
         const alloc = self.arena.allocator();
 
-        var batchIdx, const leftoverProcessCount = self.getBatchAndProcessIdxForGlobalIdx(pCount);
-        if (leftoverProcessCount > 0) batchIdx += 1;
-        self.batches = try alloc.alloc(Batch.Batch, batchIdx);
+        var batches, const remainingProcesses = divideWithRemainder(u16, pCount, Batch.BATCH_SIZE);
+        if (remainingProcesses > 0) batches += 1;
 
-        if (leftoverProcessCount > 0) {
-            for (0..Batch.BATCH_SIZE - leftoverProcessCount) |i| {
-                self.batches[batchIdx - 1].queue[Batch.BATCH_SIZE - i - 1] = null;
-            }
+        self.batches = try alloc.alloc(Batch.Batch, batches);
+        for (self.batches, 0..) |*batch, i| {
+            const size = if (remainingProcesses > 0 and i == self.batches.len - 1) remainingProcesses else Batch.BATCH_SIZE;
+            batch.seed(
+                random,
+                size,
+                i,
+            );
         }
 
         self.process_count = pCount;
@@ -44,7 +47,7 @@ pub const ExecutionContext = struct {
         return .{ self.current_batch, self.getCurrentBatch().current };
     }
     pub fn getCurrentBatch(self: *ExecutionContext) *Batch.Batch {
-                return &self.batches[self.current_batch];
+        return &self.batches[self.current_batch];
     }
     pub fn getCurrentProcess(self: *ExecutionContext) *Process {
         return self.getCurrentBatch().getCurrent() catch unreachable;
@@ -58,13 +61,13 @@ pub const ExecutionContext = struct {
         return &(self.batches[batchIdx].queue[processIdx].?);
     }
     pub fn moveToNextProcess(self: *ExecutionContext) void {
-const currBatch = self.getCurrentBatch();
+        const currBatch = self.getCurrentBatch();
         (currBatch.getCurrent() catch unreachable).operation.calculate();
 
         currBatch.moveToNext() catch unreachable;
         if (currBatch.isDone()) {
-        self.current_batch += 1;
-}
+            self.current_batch += 1;
+        }
     }
     pub fn isComplete(self: *ExecutionContext) bool {
         return self.current_batch == self.batches.len;

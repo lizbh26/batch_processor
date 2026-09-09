@@ -1,10 +1,8 @@
 const std = @import("std");
 const Operation = @import("operation.zig");
 
-const generateRand = @import("../utils/random_number.zig").generateRandomNumber;
-
 pub const Process = struct {
-    id: u16,
+    id: usize,
     batchIdx: usize,
 
     username: []const u8,
@@ -13,11 +11,11 @@ pub const Process = struct {
     tme_ms: i128,
     tt_ms: i128 = 0,
 
-    pub fn seed(self: *Process, data: struct { id: u16, batchIdx: usize }) void {
+    pub fn seed(self: *Process, random: std.Random, data: struct { id: usize, batchIdx: usize }) void {
         self.id = data.id;
         self.batchIdx = data.batchIdx;
-        self.operation.seed();
-        self.tme_ms = generateRand(u8, 4, 12) * 1000;
+        self.operation.seed(random);
+        self.tme_ms = random.intRangeAtMost(i128, 1, 3) * 1000;
         self.tt_ms = 0;
     }
 
