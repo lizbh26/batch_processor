@@ -53,7 +53,10 @@ pub const ExecutionContext = struct {
         return self.getCurrentBatch().getCurrent() catch unreachable;
     }
     pub fn getCompletedProcesses(self: *ExecutionContext) u16 {
-        return self.current_batch * Batch.BATCH_SIZE + self.getCurrentBatch().done;
+        var pCount: u16 = 0;
+        for (0..self.current_batch) |i| pCount += self.batches[i].done;
+        if (!self.isComplete()) pCount += self.getCurrentBatch().done;
+        return pCount;
     }
     pub fn getProcessWithGlobalIdx(self: *ExecutionContext, idx: u16) !*Process {
         if (idx > self.process_count) return error.OverFlow;
