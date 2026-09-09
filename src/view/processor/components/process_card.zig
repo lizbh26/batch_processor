@@ -21,7 +21,6 @@ pub const ProcessCard = struct {
 
     idLabel: LabelWidget,
     batchLabel: LabelWidget,
-    usernameLabel: LabelWidget,
     opLabel: LabelWidget,
     timeLabel: LabelWidget,
 
@@ -33,8 +32,6 @@ pub const ProcessCard = struct {
 
         self.idLabel.init(alloc);
         self.batchLabel.init(alloc);
-
-        self.usernameLabel.init(alloc);
 
         self.opLabel.init(alloc);
 
@@ -52,7 +49,6 @@ pub const ProcessCard = struct {
 
         try self.idLabel.changeText(try std.fmt.allocPrint(alloc, "ID: {d}", .{process.id}));
         try self.batchLabel.changeText(try std.fmt.allocPrint(alloc, " Lote {d} ", .{process.batchIdx + 1}));
-        try self.usernameLabel.changeText(try std.mem.concat(alloc, u8, &.{ "Nombre: ", process.username }));
         try self.opLabel.changeText(try std.mem.concat(alloc, u8, &.{ "OP: ", try process.operation.toString(alloc, process.isDone()) }));
 
         const time_estimated = @divTrunc(process.tme_ms, 1000);
@@ -65,7 +61,7 @@ pub const ProcessCard = struct {
         return @min(win.width, MAX_CARD_WIDTH);
     }
     pub fn getHeight(self: *ProcessCard) u16 {
-        if (self.type == .doing) return 6;
+        if (self.type == .doing) return 5;
         return 4;
     }
 
@@ -84,11 +80,6 @@ pub const ProcessCard = struct {
         self.batchLabel.draw(batchChild);
 
         var y_off: i17 = 1;
-        if (self.type == .doing) {
-            const child = container.child(.{ .x_off = PADDING_X_INNER, .y_off = y_off, .width = container.width - PADDING_X_INNER * 2, .height = 1 });
-            self.usernameLabel.draw(child);
-            y_off += 1;
-        }
         if (self.type != .pending) {
             const child = container.child(.{ .x_off = PADDING_X_INNER, .y_off = y_off, .width = container.width - PADDING_X_INNER * 2, .height = 1 });
             self.opLabel.draw(child);

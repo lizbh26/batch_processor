@@ -5,8 +5,6 @@ pub const Process = struct {
     id: usize,
     batchIdx: usize,
 
-    username: []const u8,
-
     operation: Operation.Operation,
     tme_ms: i128,
     tt_ms: i128 = 0,

@@ -17,7 +17,6 @@ const Input = @import("components/input.zig");
 const CtxValidators = @import("utils/ctx_validators.zig");
 
 var inputs = [_]Input.WidgetConfig{
-    .{ .label = "Nombre del programador", .maxInputSize = 40, .type = .text },
     .{ .label = "ID del programa", .maxInputSize = 20, .type = .number },
     .{ .label = "Operación", .maxInputSize = 20, .type = .operation },
     .{ .label = "Tiempo Máximo Estimado", .maxInputSize = 3, .type = .number },
@@ -51,7 +50,6 @@ pub const EditProcessWidget = struct {
         const batchIdx, _ = self.ctx.getBatchAndProcessIdx();
         process.batchIdx = batchIdx;
 
-        process.username = try alloc.dupe(u8, self.inputList.getInputAt(0));
         process.id = try alloc.dupe(u8, self.inputList.getInputAt(1));
         process.operation = Operation.fromString(self.inputList.getInputAt(2)) catch unreachable;
         process.tme_ms = (std.fmt.parseInt(i128, self.inputList.getInputAt(3), 10) catch unreachable) * 1000;
