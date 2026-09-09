@@ -45,6 +45,20 @@ pub const ProcessorOrchestratorWidget = struct {
     }
 
     pub fn handleInput(self: *ProcessorOrchestratorWidget, key: vaxis.Key) !void {
+        if (!self.ctx.isComplete()) {
+            if (self.running) {
+                if (key.matches('e', .{})) {
+                    try self.ctx.getCurrentBatch().moveToNext();
+                } else if (key.matches('w', .{})) {
+                    self.ctx.failCurrentProcess();
+                } else if (key.matches('p', .{})) {
+                    self.running = false;
+                    self.currentProcessPanel.running = false;
+                }
+            } else if (key.matches('c', .{})) {
+                self.running = true;
+            }
+        }
         self.completedProcessesPanel.handleInput(key);
     }
 
@@ -56,10 +70,12 @@ pub const ProcessorOrchestratorWidget = struct {
     }
 
     pub fn tick(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {
-        if (!self.ctx.isComplete() and self.running) {
-            try self.header.tick(now);
-            self.currentProcessPanel.tick(now);
-        }
+        if (self.ctx.isComplete() or !self.running) return;
+
+        try self.header.tick(now);
+
+        if (!self.currentProcessPanel.running) self.currentProcessPanel.run(now);
+        self.currentProcessPanel.tick(now);
     }
 
     pub fn draw(self: *ProcessorOrchestratorWidget, win: Window) !void {

@@ -34,9 +34,10 @@ pub const Batch = struct {
 
     fn next(self: *Batch) !void {
         if (self.isDone()) return BatchError.AccessWhenDone;
-        while ((try self.getCurrent()).isDone()) {
+        while (true) {
             self.current += 1;
             if (self.current == self.size) self.current = 0;
+            if (!(try self.getCurrent()).isDone()) return;
         }
     }
     pub fn moveToNext(self: *Batch) !void {

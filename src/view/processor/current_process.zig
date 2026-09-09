@@ -49,11 +49,12 @@ pub const CurrentProcessExecutionWidget = struct {
         const diff = zeit.instant(.{ .unix_nano = timeEllapsedNano }, &zeit.utc).milliTimestamp();
 
         const process = self.ctx.getCurrentProcess();
-        process.tt_ms = diff;
+        process.tt_ms += diff;
+
+        self.time_start = now;
 
         if (process.isDone()) {
-            self.ctx.moveToNextProcess();
-            self.time_start = now;
+            self.ctx.completeCurrentProcess();
         }
     }
     pub fn draw(self: *CurrentProcessExecutionWidget, win: Window) !void {

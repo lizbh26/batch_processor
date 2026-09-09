@@ -63,15 +63,23 @@ pub const ExecutionContext = struct {
         const batchIdx, const processIdx = divideWithRemainder(u16, idx, Batch.BATCH_SIZE);
         return &(self.batches[batchIdx].queue[processIdx].?);
     }
-    pub fn moveToNextProcess(self: *ExecutionContext) void {
+    pub fn completeCurrentProcess(self: *ExecutionContext) void {
+        self.getCurrentProcess().operation.calculate();
+        self.moveToNext();
+    }
+    pub fn failCurrentProcess(self: *ExecutionContext) void {
+        var p = self.getCurrentProcess();
+        p.tme_ms = p.tt_ms;
+        self.moveToNext();
+    }
+    fn moveToNext(self: *ExecutionContext) void {
         const currBatch = self.getCurrentBatch();
-        (currBatch.getCurrent() catch unreachable).operation.calculate();
-
         currBatch.moveToNext() catch unreachable;
         if (currBatch.isDone()) {
             self.current_batch += 1;
         }
     }
+
     pub fn isComplete(self: *ExecutionContext) bool {
         return self.current_batch == self.batches.len;
     }
