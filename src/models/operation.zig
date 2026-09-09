@@ -49,8 +49,13 @@ pub const Operation = struct {
             };
 
         var op = try std.fmt.allocPrint(alloc, "{d} {c} {d}", .{ self.a, operand, self.b });
-        if (displayResult and self.result != null) {
-            const res = try std.fmt.allocPrint(alloc, " = {d:.4}", .{self.result.?});
+        if (displayResult) {
+            var res: []const u8 = undefined;
+            if (self.result == null) {
+                res = try alloc.dupe(u8, " = ERROR");
+            } else {
+                res = try std.fmt.allocPrint(alloc, " = {d:.4}", .{self.result.?});
+            }
             defer alloc.free(res);
 
             const prevMem = (&op).*;

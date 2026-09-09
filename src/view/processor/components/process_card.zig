@@ -49,7 +49,7 @@ pub const ProcessCard = struct {
 
         try self.idLabel.changeText(try std.fmt.allocPrint(alloc, "ID: {d}", .{process.id}));
         try self.batchLabel.changeText(try std.fmt.allocPrint(alloc, " Lote {d} ", .{process.batchIdx + 1}));
-        try self.opLabel.changeText(try std.mem.concat(alloc, u8, &.{ "OP: ", try process.operation.toString(alloc, process.isDone()) }));
+        try self.opLabel.changeText(try std.mem.concat(alloc, u8, &.{ "OP: ", try process.operation.toString(alloc, self.type == .completed) }));
 
         const time_estimated = @divTrunc(process.tme_ms, 1000);
         const time_taken = @divTrunc(process.tt_ms, 1000);
