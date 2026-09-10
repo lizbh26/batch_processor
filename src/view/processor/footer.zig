@@ -23,10 +23,13 @@ pub const FooterWidget = struct {
     }
 
     pub fn showRunningControls(self: *FooterWidget) !void {
-        try self.stateControls.changeText("P - Pausar simulación    E - Interrumpir programa    W - Fallar programa");
+        try self.stateControls.changeText("P - Pausar simulación    E - Interrumpir programa    W - Fallar programa    Ctrl+C - Salir");
     }
     pub fn showPausedControls(self: *FooterWidget) !void {
         try self.stateControls.changeText("Simulación pausada    C - Continuar");
+    }
+    pub fn showCompletedControls(self: *FooterWidget) !void {
+        try self.stateControls.changeText("Simulación terminada    Ctrl+C - Salir");
     }
     pub fn draw(self: *FooterWidget, win: Window) !void {
         const stateControlsWidth = @min(self.stateControls.getWidth(), win.width);

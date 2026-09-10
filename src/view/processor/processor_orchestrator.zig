@@ -121,6 +121,8 @@ pub const ProcessorOrchestratorWidget = struct {
         try self.completedProcessesPanel.draw(completedProcessesPanelChild);
     }
     fn drawFooter(self: *ProcessorOrchestratorWidget, win: Window) !void {
+        if (self.ctx.isComplete()) try self.footer.showCompletedControls();
+
         const footerContainer = win.child(.{ .x_off = 0, .y_off = win.height - FOOTER_WIDTH - 1, .width = win.width, .height = FOOTER_WIDTH, .border = .{ .where = .top, .style = .{ .fg = .{ .index = 255 } } } });
         try self.footer.draw(footerContainer);
     }
