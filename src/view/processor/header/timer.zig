@@ -15,6 +15,8 @@ pub const TimerWidget = struct {
     alloc: std.mem.Allocator,
 
     start: zeit.Instant,
+    ellapsed: i128,
+
     label: LabelWidget,
 
     running: bool,
@@ -25,6 +27,7 @@ pub const TimerWidget = struct {
         self.label.init(alloc);
 
         self.start = undefined;
+        self.ellapsed = 0;
         self.running = false;
     }
 
@@ -33,20 +36,25 @@ pub const TimerWidget = struct {
         alloc.destroy(self);
     }
 
-    pub fn run(self: *TimerWidget, now: zeit.Instant) void {
+    pub fn kickstart(self: *TimerWidget, now: zeit.Instant) void {
         self.start = now;
         self.running = true;
     }
+
     pub fn stop(self: *TimerWidget) void {
         self.running = false;
     }
 
     pub fn tick(self: *TimerWidget, now: zeit.Instant) !void {
-        if (!self.running) return;
+        self.running = true;
 
         const diffNano = now.timestamp - self.start.timestamp;
-        const diff = zeit.instant(.{ .unix_nano = diffNano }, &zeit.utc).time();
+        self.ellapsed += diffNano;
+
+        const diff = zeit.instant(.{ .unix_nano = self.ellapsed }, &zeit.utc).time();
         try self.label.changeText(try self.diffToString(diff));
+
+        self.start = now;
     }
 
     pub fn getWidth(self: *TimerWidget) u16 {

@@ -37,7 +37,7 @@ pub const CompletedProcessesWidget = struct {
         self.arena.deinit();
     }
 
-    pub fn run(self: *CompletedProcessesWidget) !void {
+    pub fn kickstart(self: *CompletedProcessesWidget) !void {
         const alloc = self.arena.allocator();
         self.cards = try alloc.alloc(ProcessCardWidget, self.ctx.process_count);
 

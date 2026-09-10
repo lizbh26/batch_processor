@@ -38,7 +38,7 @@ pub const MainOrchestrator = struct {
     pub fn switchToProcessorPhase(self: *MainOrchestrator, now: zeit.Instant) !void {
         self.ctx.current_process_idx = 0;
         self.phase = .processor;
-        try self.processorOrchestrator.run(now);
+        try self.processorOrchestrator.kickstart(now);
         self.inputOrchestrator.deinit();
     }
 
