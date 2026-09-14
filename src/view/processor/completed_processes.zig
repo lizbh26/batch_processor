@@ -54,17 +54,6 @@ pub const CompletedProcessesWidget = struct {
         }
     }
 
-    fn getCompleted(self: *CompletedProcessesWidget, alloc: std.mem.Allocator) ![]?*Process {
-        const total = self.ctx.process_count;
-        var completed = try alloc.alloc(?*Process, total);
-        for (self.cardOffset..total) |i| {
-            const process = try self.ctx.getProcessWithGlobalIdx(usize_to(u16, i));
-            completed[i] = if (process.isDone()) process else null;
-        }
-
-        return completed;
-    }
-
     pub fn draw(self: *CompletedProcessesWidget, win: Window) !void {
         const alloc = self.arena.allocator();
 
@@ -78,18 +67,17 @@ pub const CompletedProcessesWidget = struct {
         const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
         self.title.draw(titleChild);
 
-        const processes = try self.getCompleted(alloc);
-        defer alloc.free(processes);
-
         var y_off: u16 = 1;
         for (self.cardOffset..self.ctx.process_count) |i| {
             const card = &self.cards[i];
-            const p = processes[i] orelse {
+
+            const process = try self.ctx.getProcessWithGlobalIdx(usize_to(u16, i));
+            if (!process.isDone()) {
                 card.process = null;
                 continue;
-            };
+            }
 
-            try card.updateProcess(p);
+            try card.updateProcess(process);
 
             const width = card.getWidth(win);
             const height = card.getHeight();

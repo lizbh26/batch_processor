@@ -61,6 +61,7 @@ pub const CurrentProcessExecutionWidget = struct {
             self.ctx.completeCurrentProcess();
         }
     }
+
     pub fn draw(self: *CurrentProcessExecutionWidget, win: Window) !void {
         const alloc = self.arena.allocator();
 

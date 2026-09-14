@@ -38,10 +38,9 @@ pub const PendingProcessesWidget = struct {
         self.arena.deinit();
     }
 
-    fn getPending(self: *PendingProcessesWidget) ![]?*Process {
-        if (self.ctx.isComplete()) return &.{};
+    fn getPending(self: *PendingProcessesWidget, processes: *[MAX_CARDS_TO_SHOW]?*Process) !void {
+        if (self.ctx.isComplete()) return;
 
-        var pending = try self.arena.allocator().alloc(?*Process, MAX_CARDS_TO_SHOW);
         var i: usize = 0;
 
         const batchIdx, const currentProcessIdx = self.ctx.getBatchAndProcessIdx();
@@ -51,25 +50,23 @@ pub const PendingProcessesWidget = struct {
             if (processIdx == currentProcessIdx) continue;
 
             if (process.* == null or process.*.?.isDone()) {
-                pending[i] = null;
+                processes[i] = null;
             } else {
-                pending[i] = &(process.*.?);
+                processes[i] = &(process.*.?);
             }
             i += 1;
         }
-
-        return pending;
     }
 
     pub fn draw(self: *PendingProcessesWidget, win: Window) !void {
         const alloc = self.arena.allocator();
 
-        const pending = try self.getPending();
-        defer alloc.free(pending);
+        var processes: [MAX_CARDS_TO_SHOW]?*Process = [_]?*Process{null} ** MAX_CARDS_TO_SHOW;
+        try self.getPending(&processes);
 
         var n: u16 = 0;
         var y_off: u16 = 1;
-        for (pending, 0..) |process, i| {
+        for (processes, 0..) |process, i| {
             const card = &self.cards[i];
 
             const p = process orelse {
