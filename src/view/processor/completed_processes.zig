@@ -48,7 +48,7 @@ pub const CompletedProcessesWidget = struct {
 
     pub fn handleInput(self: *CompletedProcessesWidget, key: vaxis.Key) void {
         if (key.matches(vaxis.Key.down, .{})) {
-            if (self.ctx.getCompletedProcesses() - self.cardOffset > 1) self.cardOffset += 1;
+            if (self.ctx.getCompletedProcessesCount() - self.cardOffset > 1) self.cardOffset += 1;
         } else if (key.matches(vaxis.Key.up, .{})) {
             if (self.cardOffset > 0) self.cardOffset -= 1;
         }
@@ -68,8 +68,10 @@ pub const CompletedProcessesWidget = struct {
     pub fn draw(self: *CompletedProcessesWidget, win: Window) !void {
         const alloc = self.arena.allocator();
 
-        const plural_S = if (self.ctx.current_process_idx == 1) "" else "s";
-        const msg: []const u8 = if (self.ctx.isComplete()) "Todos los procesos terminados" else try std.fmt.allocPrint(alloc, "{d} proceso{s} terminado{s}", .{ self.ctx.current_process_idx, plural_S, plural_S });
+        const completed = self.ctx.getCompletedProcessesCount();
+
+        const plural_S = if (completed == 1) "" else "s";
+        const msg: []const u8 = if (self.ctx.isComplete()) "Todos los procesos terminados" else try std.fmt.allocPrint(alloc, "{d} proceso{s} terminado{s}", .{ completed, plural_S, plural_S });
         try self.title.changeText(msg);
 
         const titleWidth = usize_to(u16, self.title.getWidth());

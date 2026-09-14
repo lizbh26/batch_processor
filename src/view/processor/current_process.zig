@@ -44,7 +44,10 @@ pub const CurrentProcessExecutionWidget = struct {
     pub fn tick(self: *CurrentProcessExecutionWidget, now: zeit.Instant) void {
         if (self.ctx.isComplete()) return;
 
-        self.running = true;
+        if (!self.running) {
+            self.time_start = now;
+            self.running = true;
+        }
 
         const timeEllapsedNano = now.timestamp - self.time_start.timestamp;
         const diff = zeit.instant(.{ .unix_nano = timeEllapsedNano }, &zeit.utc).milliTimestamp();

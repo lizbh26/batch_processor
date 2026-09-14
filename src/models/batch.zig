@@ -29,14 +29,13 @@ pub const Batch = struct {
 
     pub fn getCurrent(self: *Batch) !*Process {
         if (self.isDone()) return BatchError.AccessWhenDone;
-        return &self.queue[self.current].?;
+        return &(self.queue[self.current].?);
     }
 
     fn next(self: *Batch) !void {
         if (self.isDone()) return BatchError.AccessWhenDone;
         while (true) {
-            self.current += 1;
-            if (self.current == self.size) self.current = 0;
+            if (self.current == self.size - 1) self.current = 0 else self.current += 1;
             if (!(try self.getCurrent()).isDone()) return;
         }
     }

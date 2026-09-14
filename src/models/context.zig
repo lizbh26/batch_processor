@@ -12,12 +12,9 @@ pub const ExecutionContext = struct {
 
     process_count: u16,
 
-    current_process_idx: u16,
-
     pub fn init(self: *ExecutionContext, extern_alloc: std.mem.Allocator) void {
         self.arena = std.heap.ArenaAllocator.init(extern_alloc);
         self.process_count = 0;
-        self.current_process_idx = 0;
     }
     pub fn deinit(self: *ExecutionContext) void {
         self.arena.deinit();
@@ -52,11 +49,9 @@ pub const ExecutionContext = struct {
     pub fn getCurrentProcess(self: *ExecutionContext) *Process {
         return self.getCurrentBatch().getCurrent() catch unreachable;
     }
-    pub fn getCompletedProcesses(self: *ExecutionContext) u16 {
-        var pCount: u16 = 0;
-        for (0..self.current_batch) |i| pCount += self.batches[i].done;
-        if (!self.isComplete()) pCount += self.getCurrentBatch().done;
-        return pCount;
+    pub fn getCompletedProcessesCount(self: *ExecutionContext) u16 {
+        const maxBatchCount = @min(self.current_batch, self.batches.len - 1);
+        return maxBatchCount * Batch.BATCH_SIZE + self.batches[maxBatchCount].done;
     }
     pub fn getProcessWithGlobalIdx(self: *ExecutionContext, idx: u16) !*Process {
         if (idx > self.process_count) return error.OverFlow;
@@ -85,7 +80,7 @@ pub const ExecutionContext = struct {
     }
 
     pub fn isUniqueId(self: *ExecutionContext, id: []const u8) bool {
-        for (0..self.current_process_idx) |i| {
+        for (0..self.getCompletedProcessesCount()) |i| {
             const p = self.getProcessWithGlobalIdx(usize_to(u16, i)) catch unreachable;
             if (std.mem.eql(u8, p.id, id)) return false;
         }
