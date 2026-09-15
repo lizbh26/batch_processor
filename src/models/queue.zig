@@ -38,6 +38,12 @@ pub fn SimpleQueue(comptime T: type) type {
         pub fn isFull(self: Self) bool {
             return self.front == self.end + 2 or (self.front == 0 and self.end == self.size - 2) or (self.front == 1 and self.end == self.size - 1);
         }
+        pub fn length(self: Self) usize {
+            if (self.isEmpty()) return 0;
+            if (self.isFull()) return self.size;
+            if (self.front < self.end) return self.end - self.front + 1;
+            return (self.end + 1) + (self.size - self.front);
+        }
 
         pub fn enqueue(self: *Self, item: T) !void {
             if (self.isFull()) return error.OverFlow;
