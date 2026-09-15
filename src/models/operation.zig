@@ -15,8 +15,14 @@ pub const Operation = struct {
             1 => self.operand = .sum,
             2 => self.operand = .diff,
             3 => self.operand = .product,
-            4 => self.operand = .division,
-            5 => self.operand = .division,
+            4 => {
+                self.operand = .division;
+                if (self.b == 0) self.b = 1;
+            },
+            5 => {
+                self.operand = .remainder;
+                if (self.b == 0) self.b = 1;
+            },
             else => unreachable,
         }
 
