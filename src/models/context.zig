@@ -134,8 +134,12 @@ pub const ExecutionContext = struct {
     pub fn blockCurrentProcess(self: *Self) void {
         const p = self.ready_queue.dequeue() catch return;
         for (&self.blocked) |*bp| {
-            if (bp.* == null) bp.* = .{ .p = p, .ellapsed_ms = 0 };
+            if (bp.* == null) {
+                bp.* = .{ .p = p, .ellapsed_ms = 0 };
+                return;
+            }
         }
+        unreachable;
     }
 
     pub fn isComplete(self: Self) bool {
