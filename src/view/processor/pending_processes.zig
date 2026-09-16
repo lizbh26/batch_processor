@@ -3,8 +3,7 @@ const vaxis = @import("vaxis");
 const Arena = std.heap.ArenaAllocator;
 
 const Process = @import("~").models.Process.Process;
-const Batch = @import("~").models.Batch;
-const ExecutionContext = @import("~").models.Context.ExecutionContext;
+const Context = @import("~").models.Context;
 
 const Window = vaxis.Window;
 const ProcessCardWidget = @import("components/process_card.zig").ProcessCard;
@@ -12,15 +11,15 @@ const Label = @import("../components/label.zig").LabelWidget;
 
 const usize_to = @import("~").utils.usize_to;
 
-const MAX_CARDS_TO_SHOW = Batch.BATCH_SIZE - 1;
+const MAX_CARDS_TO_SHOW = Context.MAX_PROCESSES_IN_MEMORY - 1;
 pub const PendingProcessesWidget = struct {
     arena: Arena,
-    ctx: *ExecutionContext,
+    ctx: *Context.ExecutionContext,
 
     title: Label,
     cards: [MAX_CARDS_TO_SHOW]ProcessCardWidget,
 
-    pub fn init(self: *PendingProcessesWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
+    pub fn init(self: *PendingProcessesWidget, extern_alloc: std.mem.Allocator, ctx: *Context.ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
         self.ctx = ctx;
 
@@ -41,20 +40,15 @@ pub const PendingProcessesWidget = struct {
     fn getPending(self: *PendingProcessesWidget, processes: *[MAX_CARDS_TO_SHOW]?*Process) !void {
         if (self.ctx.isComplete()) return;
 
-        var i: usize = 0;
+        const queue = self.ctx.ready_queue;
+        const len = queue.length();
 
-        const batchIdx, const currentProcessIdx = self.ctx.getBatchAndProcessIdx();
-        const batch: *Batch.Batch = &self.ctx.batches[batchIdx];
-
-        for (&batch.queue, 0..) |*process, processIdx| {
-            if (processIdx == currentProcessIdx) continue;
-
-            if (process.* == null or process.*.?.isDone()) {
-                processes[i] = null;
-            } else {
-                processes[i] = &(process.*.?);
-            }
-            i += 1;
+        for (1..len) |i| {
+            const p = self.ctx.ready_queue.get(i) catch unreachable;
+            processes[i] = p;
+        }
+        for (len..MAX_CARDS_TO_SHOW) |i| {
+            processes[i] = null;
         }
     }
 

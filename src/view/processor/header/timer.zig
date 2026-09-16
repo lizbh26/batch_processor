@@ -7,28 +7,21 @@ const Window = vaxis.Window;
 const LabelWidget = @import("../../components/label.zig").LabelWidget;
 
 const Process = @import("~").models.Process.Process;
+const ExecutionContext = @import("~").models.Context.ExecutionContext;
 
 const usize_to = @import("~").utils.usize_to;
 const leftpad = @import("~").utils.leftpad;
 
 pub const TimerWidget = struct {
     alloc: std.mem.Allocator,
-
-    start: zeit.Instant,
-    ellapsed: i128,
+    ctx: *ExecutionContext,
 
     label: LabelWidget,
 
-    running: bool,
-
-    pub fn init(self: *TimerWidget, alloc: std.mem.Allocator) void {
+    pub fn init(self: *TimerWidget, alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.alloc = alloc;
-
         self.label.init(alloc);
-
-        self.start = undefined;
-        self.ellapsed = 0;
-        self.running = false;
+        self.ctx = ctx;
     }
 
     pub fn deinit(self: *TimerWidget, alloc: std.mem.Allocator) void {
@@ -36,31 +29,12 @@ pub const TimerWidget = struct {
         alloc.destroy(self);
     }
 
-    pub fn kickstart(self: *TimerWidget, now: zeit.Instant) void {
-        self.start = now;
-        self.running = true;
-    }
-
-    pub fn stop(self: *TimerWidget) void {
-        self.running = false;
-    }
-
-    pub fn tick(self: *TimerWidget, now: zeit.Instant) !void {
-        self.running = true;
-
-        const diffNano = now.timestamp - self.start.timestamp;
-        self.ellapsed += diffNano;
-
-        const diff = zeit.instant(.{ .unix_nano = self.ellapsed }, &zeit.utc).time();
-        try self.label.changeText(try self.diffToString(diff));
-
-        self.start = now;
-    }
-
     pub fn getWidth(self: *TimerWidget) u16 {
         return usize_to(u16, self.label.getWidth());
     }
     pub fn draw(self: *TimerWidget, win: Window) !void {
+        const diff = zeit.instant(.{ .unix_nano = self.ctx.time_ellapsed_nano }, &zeit.utc).time();
+        try self.label.changeText(try self.diffToString(diff));
         self.label.draw(win);
     }
 

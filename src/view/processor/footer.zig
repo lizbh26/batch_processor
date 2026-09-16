@@ -16,14 +16,14 @@ pub const FooterWidget = struct {
         const alloc = self.arena.allocator();
 
         self.stateControls.init(alloc);
-        self.showPausedControls() catch unreachable;
+        self.showRunningControls() catch unreachable;
 
         self.scrollControls.init(alloc);
         self.scrollControls.changeText("🠝/🠟 - Navegar completados") catch unreachable;
     }
 
     pub fn showRunningControls(self: *FooterWidget) !void {
-        try self.stateControls.changeText("P - Pausar simulación    E - Interrumpir programa    W - Fallar programa    Ctrl+C - Salir");
+        try self.stateControls.changeText("P - Pausar simulación    E - Bloquear proceso    W - Fallar proceso    Ctrl+C - Salir");
     }
     pub fn showPausedControls(self: *FooterWidget) !void {
         try self.stateControls.changeText("Simulación pausada    C - Continuar");

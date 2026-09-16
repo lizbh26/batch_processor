@@ -1,91 +1,148 @@
 const std = @import("std");
-const Batch = @import("batch.zig");
 const Process = @import("process.zig").Process;
+const Queue = @import("queue.zig").Queue;
+
+const zeit = @import("zeit");
 
 const usize_to = @import("../utils/index.zig").usize_to;
 
+pub const MAX_PROCESSES_IN_MEMORY = 5;
+
+const BlockedProcess = struct { p: *Process, ellapsed_ms: i128 };
+const BLOCKED_TIME_MS = 8000;
+
+var NULL_PROCESS: Process = .{ .id = 0, .arrival_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .finalization_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .operation = .{ .a = 0, .b = 0, .operand = .sum, .result = null }, .starting_time = null, .tme_ms = 99999999999, .tt_ms = 0 };
+
 pub const ExecutionContext = struct {
+    const Self = @This();
+
     arena: std.heap.ArenaAllocator,
 
-    batches: []Batch.Batch,
-    current_batch: u16,
+    process_count: usize,
 
-    process_count: u16,
+    new_queue: Queue(Process),
+    ready_queue: Queue(Process),
+    blocked: [MAX_PROCESSES_IN_MEMORY]?BlockedProcess,
+    finished_queue: Queue(Process),
+
+    prev_tick: ?zeit.Instant,
+    time_ellapsed_nano: i128,
 
     pub fn init(self: *ExecutionContext, extern_alloc: std.mem.Allocator) void {
         self.arena = std.heap.ArenaAllocator.init(extern_alloc);
         self.process_count = 0;
+        self.prev_tick = null;
+        self.time_ellapsed_nano = 0;
     }
     pub fn deinit(self: *ExecutionContext) void {
         self.arena.deinit();
     }
 
-    pub fn createBatches(self: *ExecutionContext, random: std.Random, pCount: u16) !void {
+    pub fn create(self: *ExecutionContext, random: std.Random, pCount: usize) !void {
         const alloc = self.arena.allocator();
 
-        var batches, const remainingProcesses = divideWithRemainder(u16, pCount, Batch.BATCH_SIZE);
-        if (remainingProcesses > 0) batches += 1;
+        self.process_count = pCount;
+        self.new_queue = try .init(alloc);
+        self.ready_queue = try .init(alloc);
+        self.blocked = [_]?BlockedProcess{null} ** MAX_PROCESSES_IN_MEMORY;
+        self.finished_queue = try .init(alloc);
 
-        self.batches = try alloc.alloc(Batch.Batch, batches);
-        for (self.batches, 0..) |*batch, i| {
-            const size = if (remainingProcesses > 0 and i == self.batches.len - 1) remainingProcesses else Batch.BATCH_SIZE;
-            batch.seed(
-                random,
-                size,
-                i,
-            );
+        const processes = try alloc.alloc(Process, pCount);
+
+        for (processes, 0..) |*p, i| {
+            p.seed(random, .{ .id = i + 1 });
+            self.new_queue.enqueue(p) catch unreachable;
+        }
+    }
+
+    pub fn tick(self: *Self, now: zeit.Instant) !void {
+        if (self.isComplete()) return;
+
+        if (self.prev_tick) |prev| {
+            const delta_nano = now.timestamp - prev.timestamp;
+            self.time_ellapsed_nano += delta_nano;
+
+            const delta_ms = zeit.instant(.{ .unix_nano = delta_nano }, &zeit.utc).milliTimestamp();
+
+            if (!self.ready_queue.isEmpty()) {
+                const p = self.ready_queue.peek() catch unreachable;
+                if (p.starting_time == null) p.starting_time = now;
+                p.tt_ms += delta_ms;
+                if (p.isDone()) {
+                    try self.completeCurrentProcess(now);
+                }
+            }
+
+            try self.tickBlockedProcesses(delta_ms);
+            try self.fillConcurrentProcesses(now);
         }
 
-        self.process_count = pCount;
-        self.current_batch = 0;
+        self.prev_tick = now;
+    }
+    pub fn stop(self: *Self) void {
+        self.prev_tick = null;
     }
 
-    pub fn getBatchAndProcessIdx(self: *ExecutionContext) struct { u16, u16 } {
-        return .{ self.current_batch, self.getCurrentBatch().current };
+    fn countBlockedProcesses(self: Self) usize {
+        var i: usize = 0;
+        for (self.blocked) |b| {
+            if (b != null) i += 1;
+        }
+        return i;
     }
-    pub fn getCurrentBatch(self: *ExecutionContext) *Batch.Batch {
-        return &self.batches[self.current_batch];
+    fn countProcessesInMemory(self: Self) usize {
+        return self.ready_queue.length() + self.countBlockedProcesses();
     }
-    pub fn getCurrentProcess(self: *ExecutionContext) *Process {
-        return self.getCurrentBatch().getCurrent() catch unreachable;
+    fn fillConcurrentProcesses(self: *Self, now: zeit.Instant) !void {
+        var count = self.countProcessesInMemory();
+        while (count < MAX_PROCESSES_IN_MEMORY and !self.new_queue.isEmpty()) {
+            const p = self.new_queue.dequeue() catch unreachable;
+            try self.ready_queue.enqueue(p);
+            p.arrival_time = now;
+            count += 1;
+        }
     }
-    pub fn getCompletedProcessesCount(self: *ExecutionContext) u16 {
-        const maxBatchCount = @min(self.current_batch, self.batches.len - 1);
-        return maxBatchCount * Batch.BATCH_SIZE + self.batches[maxBatchCount].done;
+    fn tickBlockedProcesses(self: *Self, delta_ms: i128) !void {
+        for (&self.blocked) |*blocked| {
+            const bp = &(blocked.* orelse continue);
+            if (bp.ellapsed_ms < BLOCKED_TIME_MS) {
+                bp.ellapsed_ms += delta_ms;
+            } else if (self.countProcessesInMemory() < MAX_PROCESSES_IN_MEMORY) {
+                try self.ready_queue.enqueue(bp.p);
+                blocked.* = null;
+            }
+        }
     }
-    pub fn getProcessWithGlobalIdx(self: *ExecutionContext, idx: u16) !*Process {
-        if (idx > self.process_count) return error.OverFlow;
-        const batchIdx, const processIdx = divideWithRemainder(u16, idx, Batch.BATCH_SIZE);
-        return &(self.batches[batchIdx].queue[processIdx].?);
+
+    pub fn getCurrentProcess(self: *Self) *Process {
+        return self.ready_queue.peek() catch {
+            NULL_PROCESS.tt_ms = 0;
+            return &NULL_PROCESS;
+        };
     }
-    pub fn completeCurrentProcess(self: *ExecutionContext) void {
-        self.getCurrentProcess().operation.calculate();
-        self.moveToNext();
+    pub fn completeCurrentProcess(self: *Self, now: zeit.Instant) !void {
+        const p = self.ready_queue.peek() catch return;
+        p.operation.calculate();
+        try self.moveCurrentToFinalized(now);
     }
-    pub fn failCurrentProcess(self: *ExecutionContext) void {
-        var p = self.getCurrentProcess();
-        p.tme_ms = p.tt_ms;
-        self.moveToNext();
+    pub fn failCurrentProcess(self: *Self, now: zeit.Instant) !void {
+        try self.moveCurrentToFinalized(now);
     }
-    fn moveToNext(self: *ExecutionContext) void {
-        const currBatch = self.getCurrentBatch();
-        currBatch.moveToNext() catch unreachable;
-        if (currBatch.isDone()) {
-            self.current_batch += 1;
+    fn moveCurrentToFinalized(self: *Self, now: zeit.Instant) !void {
+        const p = self.ready_queue.dequeue() catch return;
+        p.finalization_time = now;
+        try self.finished_queue.enqueue(p);
+    }
+
+    pub fn blockCurrentProcess(self: *Self) void {
+        const p = self.ready_queue.dequeue() catch return;
+        for (&self.blocked) |*bp| {
+            if (bp.* == null) bp.* = .{ .p = p, .ellapsed_ms = 0 };
         }
     }
 
     pub fn isComplete(self: *ExecutionContext) bool {
-        return self.current_batch == self.batches.len;
-    }
-
-    pub fn isUniqueId(self: *ExecutionContext, id: []const u8) bool {
-        for (0..self.getCompletedProcessesCount()) |i| {
-            const p = self.getProcessWithGlobalIdx(usize_to(u16, i)) catch unreachable;
-            if (std.mem.eql(u8, p.id, id)) return false;
-        }
-
-        return true;
+        return self.finished_queue.length() == self.process_count;
     }
 };
 

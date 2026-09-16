@@ -30,6 +30,7 @@ pub const ProcessorOrchestratorWidget = struct {
     footer: Footer,
 
     running: bool,
+    should_fail_current: bool,
 
     pub fn init(self: *ProcessorOrchestratorWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
@@ -37,8 +38,9 @@ pub const ProcessorOrchestratorWidget = struct {
 
         self.ctx = ctx;
         self.running = true;
+        self.should_fail_current = false;
 
-        self.header.init(alloc);
+        self.header.init(alloc, self.ctx);
         self.pendingProcessesPanel.init(alloc, self.ctx);
         self.currentProcessPanel.init(alloc, self.ctx);
         self.completedProcessesPanel.init(alloc, self.ctx);
@@ -53,42 +55,39 @@ pub const ProcessorOrchestratorWidget = struct {
         if (!self.ctx.isComplete()) {
             if (self.running) {
                 if (key.matches('e', .{})) {
-                    try self.ctx.getCurrentBatch().moveToNext();
+                    self.ctx.blockCurrentProcess();
                 } else if (key.matches('w', .{})) {
-                    self.ctx.failCurrentProcess();
+                    self.should_fail_current = true;
                 } else if (key.matches('p', .{})) {
-                    self.running = false;
+                    try self.stop();
                 }
             } else if (key.matches('c', .{})) {
-                self.running = true;
+                try self.restart();
             }
         }
         self.completedProcessesPanel.handleInput(key);
     }
 
-    pub fn kickstart(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {
-        self.header.timerWidget.kickstart(now);
+    pub fn kickstart(self: *ProcessorOrchestratorWidget) !void {
         try self.completedProcessesPanel.kickstart();
-
-        try self.run(now);
-    }
-    pub fn run(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {
-        try self.header.timerWidget.tick(now);
-        self.currentProcessPanel.tick(now);
-        try self.footer.showRunningControls();
-    }
-    pub fn stop(self: *ProcessorOrchestratorWidget) !void {
-        self.header.timerWidget.stop();
-        self.currentProcessPanel.stop();
-        try self.footer.showPausedControls();
     }
 
     pub fn tick(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {
-        if (self.ctx.isComplete()) return;
-        if (self.running)
-            try self.run(now)
-        else
-            try self.stop();
+        if (!self.running) return;
+        if (self.should_fail_current) {
+            try self.ctx.failCurrentProcess(now);
+            self.should_fail_current = false;
+        }
+        try self.ctx.tick(now);
+    }
+    fn restart(self: *ProcessorOrchestratorWidget) !void {
+        self.running = true;
+        try self.footer.showRunningControls();
+    }
+    fn stop(self: *ProcessorOrchestratorWidget) !void {
+        self.running = false;
+        self.ctx.stop();
+        try self.footer.showPausedControls();
     }
 
     pub fn draw(self: *ProcessorOrchestratorWidget, win: Window) !void {
@@ -99,11 +98,6 @@ pub const ProcessorOrchestratorWidget = struct {
     }
 
     fn drawHeader(self: *ProcessorOrchestratorWidget, win: Window) !void {
-        if (!self.ctx.isComplete()) {
-            const remainingBatches = self.ctx.batches.len - self.ctx.current_batch - 1;
-            try self.header.setRemainingBatchesLabel(remainingBatches);
-        }
-
         const headerContainer = win.child(.{ .x_off = 0, .y_off = 0, .width = win.width, .height = HEADER_WIDTH, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = 255 } } } });
         try self.header.draw(headerContainer);
     }
@@ -111,14 +105,14 @@ pub const ProcessorOrchestratorWidget = struct {
         const panelWidth = @divFloor(win.width, 3);
         const mainContainer = win.child(.{ .x_off = 0, .y_off = HEADER_WIDTH + 1, .width = win.width, .height = win.height - HEADER_WIDTH - 1 - FOOTER_WIDTH });
 
-        const pendingProcessesPanelChild = mainContainer.child(.{ .x_off = 0, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
-        try self.pendingProcessesPanel.draw(pendingProcessesPanelChild);
+        // const pendingProcessesPanelChild = mainContainer.child(.{ .x_off = 0, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
+        // try self.pendingProcessesPanel.draw(pendingProcessesPanelChild);
 
         const currentProcessPanelChild = mainContainer.child(.{ .x_off = panelWidth + 1, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
         try self.currentProcessPanel.draw(currentProcessPanelChild);
 
-        const completedProcessesPanelChild = mainContainer.child(.{ .x_off = panelWidth * 2 + 1, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
-        try self.completedProcessesPanel.draw(completedProcessesPanelChild);
+        // const completedProcessesPanelChild = mainContainer.child(.{ .x_off = panelWidth * 2 + 1, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
+        // try self.completedProcessesPanel.draw(completedProcessesPanelChild);
     }
     fn drawFooter(self: *ProcessorOrchestratorWidget, win: Window) !void {
         if (self.ctx.isComplete()) try self.footer.showCompletedControls();

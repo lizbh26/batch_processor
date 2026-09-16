@@ -48,7 +48,7 @@ pub const CompletedProcessesWidget = struct {
 
     pub fn handleInput(self: *CompletedProcessesWidget, key: vaxis.Key) void {
         if (key.matches(vaxis.Key.down, .{})) {
-            if (self.ctx.getCompletedProcessesCount() - self.cardOffset > 1) self.cardOffset += 1;
+            if (self.ctx.finished_queue.length() - self.cardOffset > 1) self.cardOffset += 1;
         } else if (key.matches(vaxis.Key.up, .{})) {
             if (self.cardOffset > 0) self.cardOffset -= 1;
         }
@@ -57,7 +57,7 @@ pub const CompletedProcessesWidget = struct {
     pub fn draw(self: *CompletedProcessesWidget, win: Window) !void {
         const alloc = self.arena.allocator();
 
-        const completed = self.ctx.getCompletedProcessesCount();
+        const completed = self.ctx.finished_queue.length();
 
         const plural_S = if (completed == 1) "" else "s";
         const msg: []const u8 = if (self.ctx.isComplete()) "Todos los procesos terminados" else try std.fmt.allocPrint(alloc, "{d} proceso{s} terminado{s}", .{ completed, plural_S, plural_S });
@@ -71,7 +71,7 @@ pub const CompletedProcessesWidget = struct {
         for (self.cardOffset..self.ctx.process_count) |i| {
             const card = &self.cards[i];
 
-            const process = try self.ctx.getProcessWithGlobalIdx(usize_to(u16, i));
+            const process = try self.ctx.finished_queue.get(i);
             if (!process.isDone()) {
                 card.process = null;
                 continue;

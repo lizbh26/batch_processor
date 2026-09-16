@@ -16,12 +16,9 @@ const usize_to = @import("~").utils.usize_to;
 pub const CurrentProcessExecutionWidget = struct {
     arena: Arena,
     ctx: *ExecutionContext,
-    time_start: zeit.Instant,
 
     title: Label,
     card: ProcessCardWidget,
-
-    running: bool,
 
     pub fn init(self: *CurrentProcessExecutionWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
@@ -30,36 +27,10 @@ pub const CurrentProcessExecutionWidget = struct {
         self.ctx = ctx;
         self.title.init(alloc);
         self.card.init(alloc, .doing);
-        self.running = false;
     }
     pub fn deinit(self: *CurrentProcessExecutionWidget, alloc: std.mem.Allocator) void {
         self.arena.deinit();
         alloc.destroy(self);
-    }
-
-    pub fn stop(self: *CurrentProcessExecutionWidget) void {
-        self.running = false;
-    }
-
-    pub fn tick(self: *CurrentProcessExecutionWidget, now: zeit.Instant) void {
-        if (self.ctx.isComplete()) return;
-
-        if (!self.running) {
-            self.time_start = now;
-            self.running = true;
-        }
-
-        const timeEllapsedNano = now.timestamp - self.time_start.timestamp;
-        const diff = zeit.instant(.{ .unix_nano = timeEllapsedNano }, &zeit.utc).milliTimestamp();
-
-        const process = self.ctx.getCurrentProcess();
-        process.tt_ms += diff;
-
-        self.time_start = now;
-
-        if (process.isDone()) {
-            self.ctx.completeCurrentProcess();
-        }
     }
 
     pub fn draw(self: *CurrentProcessExecutionWidget, win: Window) !void {

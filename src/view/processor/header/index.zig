@@ -11,20 +11,20 @@ const Label = @import("../../components/label.zig").LabelWidget;
 const TimerWidget = @import("timer.zig").TimerWidget;
 
 const Process = @import("~").models.Process.Process;
+const ExecutionContext = @import("~").models.Context.ExecutionContext;
+
 const usize_to = @import("~").utils.usize_to;
 
 pub const Header = struct {
     arena: Arena,
 
-    title: Label,
     timerWidget: TimerWidget,
 
-    pub fn init(self: *Header, extern_alloc: std.mem.Allocator) void {
+    pub fn init(self: *Header, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
 
-        self.title.init(alloc);
-        self.timerWidget.init(alloc);
+        self.timerWidget.init(alloc, ctx);
     }
 
     pub fn deinit(self: *Header, alloc: std.mem.Allocator) void {
@@ -32,18 +32,9 @@ pub const Header = struct {
         alloc.destroy(self);
     }
 
-    pub fn setRemainingBatchesLabel(self: *Header, remainingBatches: usize) !void {
-        const plural_S = if (remainingBatches == 1) "" else "s";
-        try self.title.changeText(if (remainingBatches > 0) try std.fmt.allocPrint(self.arena.allocator(), "{d} lote{s} pendiente{s}", .{ remainingBatches, plural_S, plural_S }) else "");
-    }
-
     pub fn draw(self: *Header, win: Window) !void {
-        const titleWidth = usize_to(u16, self.title.getWidth());
-        const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
-        self.title.draw(titleChild);
-
         const timerWidth = self.timerWidget.getWidth();
-        const timerChild = win.child(.{ .x_off = win.width - timerWidth - 2, .y_off = 0, .width = timerWidth, .height = 1 });
+        const timerChild = win.child(.{ .x_off = @divTrunc(win.width - timerWidth, 2), .y_off = 0, .width = timerWidth, .height = 1 });
         try self.timerWidget.draw(timerChild);
     }
 };

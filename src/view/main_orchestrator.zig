@@ -35,9 +35,9 @@ pub const MainOrchestrator = struct {
         alloc.destroy(self);
     }
 
-    pub fn switchToProcessorPhase(self: *MainOrchestrator, now: zeit.Instant) !void {
+    pub fn switchToProcessorPhase(self: *MainOrchestrator) !void {
         self.phase = .processor;
-        try self.processorOrchestrator.kickstart(now);
+        try self.processorOrchestrator.kickstart();
         self.inputOrchestrator.deinit();
     }
 
@@ -53,7 +53,7 @@ pub const MainOrchestrator = struct {
             .input => {
                 try self.inputOrchestrator.tick();
                 if (self.ctx.process_count > 0) {
-                    try self.switchToProcessorPhase(now);
+                    try self.switchToProcessorPhase();
                 }
             },
             .processor => try self.processorOrchestrator.tick(now),
