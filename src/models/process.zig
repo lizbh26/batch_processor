@@ -28,3 +28,6 @@ pub const Process = struct {
         return self.tme_ms <= self.tt_ms;
     }
 };
+
+pub const BlockedProcess = struct { p: *Process, ellapsed_ms: i128 };
+pub const BLOCKED_TIME_MS = 8000;

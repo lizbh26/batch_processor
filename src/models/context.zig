@@ -1,5 +1,5 @@
 const std = @import("std");
-const Process = @import("process.zig").Process;
+const Process = @import("process.zig");
 const Queue = @import("queue.zig").Queue;
 
 const zeit = @import("zeit");
@@ -8,10 +8,7 @@ const usize_to = @import("../utils/index.zig").usize_to;
 
 pub const MAX_PROCESSES_IN_MEMORY = 5;
 
-const BlockedProcess = struct { p: *Process, ellapsed_ms: i128 };
-const BLOCKED_TIME_MS = 8000;
-
-var NULL_PROCESS: Process = .{ .id = 0, .arrival_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .finalization_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .operation = .{ .a = 0, .b = 0, .operand = .sum, .result = null }, .starting_time = null, .tme_ms = 99999999999, .tt_ms = 0 };
+var NULL_PROCESS: Process.Process = .{ .id = 0, .arrival_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .finalization_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .operation = .{ .a = 0, .b = 0, .operand = .sum, .result = null }, .starting_time = null, .tme_ms = 99999999999, .tt_ms = 0 };
 
 pub const ExecutionContext = struct {
     const Self = @This();
@@ -20,34 +17,34 @@ pub const ExecutionContext = struct {
 
     process_count: usize,
 
-    new_queue: Queue(Process),
-    ready_queue: Queue(Process),
-    blocked: [MAX_PROCESSES_IN_MEMORY]?BlockedProcess,
-    finished_queue: Queue(Process),
+    new_queue: Queue(Process.Process),
+    ready_queue: Queue(Process.Process),
+    blocked: [MAX_PROCESSES_IN_MEMORY]?Process.BlockedProcess,
+    finished_queue: Queue(Process.Process),
 
     prev_tick: ?zeit.Instant,
     time_ellapsed_nano: i128,
 
-    pub fn init(self: *ExecutionContext, extern_alloc: std.mem.Allocator) void {
+    pub fn init(self: *Self, extern_alloc: std.mem.Allocator) void {
         self.arena = std.heap.ArenaAllocator.init(extern_alloc);
         self.process_count = 0;
         self.prev_tick = null;
         self.time_ellapsed_nano = 0;
     }
-    pub fn deinit(self: *ExecutionContext) void {
+    pub fn deinit(self: *Self) void {
         self.arena.deinit();
     }
 
-    pub fn create(self: *ExecutionContext, random: std.Random, pCount: usize) !void {
+    pub fn create(self: *Self, random: std.Random, pCount: usize) !void {
         const alloc = self.arena.allocator();
 
         self.process_count = pCount;
         self.new_queue = try .init(alloc);
         self.ready_queue = try .init(alloc);
-        self.blocked = [_]?BlockedProcess{null} ** MAX_PROCESSES_IN_MEMORY;
+        self.blocked = [_]?Process.BlockedProcess{null} ** MAX_PROCESSES_IN_MEMORY;
         self.finished_queue = try .init(alloc);
 
-        const processes = try alloc.alloc(Process, pCount);
+        const processes = try alloc.alloc(Process.Process, pCount);
 
         for (processes, 0..) |*p, i| {
             p.seed(random, .{ .id = i + 1 });
@@ -105,7 +102,7 @@ pub const ExecutionContext = struct {
     fn tickBlockedProcesses(self: *Self, delta_ms: i128) !void {
         for (&self.blocked) |*blocked| {
             const bp = &(blocked.* orelse continue);
-            if (bp.ellapsed_ms < BLOCKED_TIME_MS) {
+            if (bp.ellapsed_ms < Process.BLOCKED_TIME_MS) {
                 bp.ellapsed_ms += delta_ms;
             } else if (self.countProcessesInMemory() < MAX_PROCESSES_IN_MEMORY) {
                 try self.ready_queue.enqueue(bp.p);
@@ -114,7 +111,7 @@ pub const ExecutionContext = struct {
         }
     }
 
-    pub fn getCurrentProcess(self: *Self) *Process {
+    pub fn getCurrentProcess(self: *Self) *Process.Process {
         return self.ready_queue.peek() catch {
             NULL_PROCESS.tt_ms = 0;
             return &NULL_PROCESS;
@@ -141,7 +138,7 @@ pub const ExecutionContext = struct {
         }
     }
 
-    pub fn isComplete(self: *ExecutionContext) bool {
+    pub fn isComplete(self: Self) bool {
         return self.finished_queue.length() == self.process_count;
     }
 };
