@@ -29,5 +29,17 @@ pub const Process = struct {
     }
 };
 
-pub const BlockedProcess = struct { p: *Process, ellapsed_ms: i128 };
+pub const BlockedProcess = struct {
+    p: *Process,
+    ellapsed_ms: i128,
+
+    pub fn init(self: *BlockedProcess, p: *Process) void {
+        self.p = p;
+        self.ellapsed_ms = 0;
+    }
+
+    pub fn isDone(self: *const BlockedProcess) bool {
+        return self.ellapsed_ms > BLOCKED_TIME_MS;
+    }
+};
 pub const BLOCKED_TIME_MS = 8000;

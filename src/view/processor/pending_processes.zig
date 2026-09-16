@@ -61,30 +61,26 @@ pub const PendingProcessesWidget = struct {
         const height = try self.drawReadyQueue(win, alloc);
 
         const blockedContainer = win.child(.{ .y_off = height + 2 });
-        try self.drawBlockedList(blockedContainer, alloc);
+        try self.drawBlockedQueue(blockedContainer, alloc);
     }
     fn updateReadyCards(self: *Self) !void {
         const queue = &self.ctx.ready_queue;
-        const len = queue.len;
-
-        for (0..len) |i| {
+        for (0..queue.len) |i| {
             const p = queue.get(i) catch unreachable;
             try self.ready_cards[i].updateProcess(p);
         }
-        for (len..MAX_CARDS_TO_SHOW) |i| {
+        for (queue.len..MAX_CARDS_TO_SHOW) |i| {
             self.ready_cards[i].process = null;
         }
     }
     fn updateBlockedCards(self: *Self) !void {
-        const list = &self.ctx.blocked;
-
-        for (0..list.len) |i| {
-            const card = &self.blocked_cards[i];
-            const bp: *Process.BlockedProcess = &(list[i] orelse {
-                card.blocked_process = null;
-                continue;
-            });
-            try card.updateBlockedProcess(bp);
+        const queue = &self.ctx.blocked_queue;
+        for (0..queue.len) |i| {
+            const p = queue.get(i) catch unreachable;
+            try self.blocked_cards[i].updateBlockedProcess(p);
+        }
+        for (queue.len..MAX_CARDS_TO_SHOW) |i| {
+            self.blocked_cards[i].blocked_process = null;
         }
     }
     fn drawReadyQueue(self: *Self, win: Window, alloc: std.mem.Allocator) !u16 {
@@ -110,27 +106,26 @@ pub const PendingProcessesWidget = struct {
 
         return y_off;
     }
-    fn drawBlockedList(self: *Self, win: Window, alloc: std.mem.Allocator) !void {
-        var n: u16 = 0;
+    fn drawBlockedQueue(self: *Self, win: Window, alloc: std.mem.Allocator) !void {
+        const len = self.ctx.blocked_queue.len;
+        if (len == 0) return;
+
+        const plural_S = if (len == 1) "" else "s";
+        const msg: []const u8 = if (len == 0) "Sin procesos bloqueados" else try std.fmt.allocPrint(alloc, "{d} proceso{s} bloqueado{s}", .{ len, plural_S, plural_S });
+        try self.blocked_title.changeText(msg);
+
+        const titleWidth = usize_to(u16, self.blocked_title.getWidth());
+        const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
+        self.blocked_title.draw(titleChild);
+
         var y_off: u16 = 1;
         for (&self.blocked_cards) |*card| {
             if (card.blocked_process == null) continue;
-            n += 1;
 
             const height = card.getHeight();
             const child = win.child(.{ .x_off = @divTrunc(win.width - card.getWidth(win), 2), .y_off = y_off, .width = win.width, .height = height });
             card.draw(child);
             y_off += height;
         }
-
-        if (n == 0) return;
-
-        const plural_S = if (n == 1) "" else "s";
-        const msg: []const u8 = if (n == 0) "Sin procesos bloqueados" else try std.fmt.allocPrint(alloc, "{d} proceso{s} bloqueado{s}", .{ n, plural_S, plural_S });
-        try self.blocked_title.changeText(msg);
-
-        const titleWidth = usize_to(u16, self.blocked_title.getWidth());
-        const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
-        self.blocked_title.draw(titleChild);
     }
 };

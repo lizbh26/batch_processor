@@ -55,7 +55,7 @@ pub const ProcessorOrchestratorWidget = struct {
         if (!self.ctx.isComplete()) {
             if (self.running) {
                 if (key.matches('e', .{})) {
-                    self.ctx.blockCurrentProcess();
+                    try self.ctx.blockCurrentProcess();
                 } else if (key.matches('w', .{})) {
                     self.should_fail_current = true;
                 } else if (key.matches('p', .{})) {

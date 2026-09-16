@@ -20,7 +20,7 @@ pub const ExecutionContext = struct {
     new_queue: Queue(Process.Process),
     ready_queue: Queue(Process.Process),
     current_process: ?*Process.Process,
-    blocked: [MAX_PROCESSES_IN_MEMORY]?Process.BlockedProcess,
+    blocked_queue: Queue(Process.BlockedProcess),
     finished_queue: Queue(Process.Process),
 
     prev_tick: ?zeit.Instant,
@@ -43,7 +43,7 @@ pub const ExecutionContext = struct {
         self.new_queue = try .init(alloc);
         self.ready_queue = try .init(alloc);
         self.current_process = null;
-        self.blocked = [_]?Process.BlockedProcess{null} ** MAX_PROCESSES_IN_MEMORY;
+        self.blocked_queue = try .init(alloc);
         self.finished_queue = try .init(alloc);
 
         const processes = try alloc.alloc(Process.Process, pCount);
@@ -74,15 +74,8 @@ pub const ExecutionContext = struct {
         self.prev_tick = null;
     }
 
-    fn countBlockedProcesses(self: Self) usize {
-        var i: usize = 0;
-        for (self.blocked) |b| {
-            if (b != null) i += 1;
-        }
-        return i;
-    }
     fn countProcessesInMemory(self: Self) usize {
-        return self.ready_queue.len + self.countBlockedProcesses();
+        return self.ready_queue.len + self.blocked_queue.len;
     }
     fn fillConcurrentProcesses(self: *Self, now: zeit.Instant) !void {
         var count = self.countProcessesInMemory();
@@ -105,14 +98,15 @@ pub const ExecutionContext = struct {
         }
     }
     fn tickBlockedProcesses(self: *Self, delta_ms: i128) !void {
-        for (&self.blocked) |*blocked| {
-            const bp = &(blocked.* orelse continue);
-            if (bp.ellapsed_ms < Process.BLOCKED_TIME_MS) {
-                bp.ellapsed_ms += delta_ms;
-            } else {
-                try self.ready_queue.enqueue(bp.p);
-                blocked.* = null;
-            }
+        for (0..self.blocked_queue.len) |i| {
+            const bp = self.blocked_queue.get(i) catch unreachable;
+            bp.ellapsed_ms += delta_ms;
+        }
+        const top = self.blocked_queue.peek() catch return;
+        if (top.isDone()) {
+            try self.ready_queue.enqueue(top.p);
+            _ = self.blocked_queue.dequeue() catch unreachable;
+            self.arena.allocator().destroy(top);
         }
     }
 
@@ -134,16 +128,14 @@ pub const ExecutionContext = struct {
         self.current_process = self.ready_queue.dequeue() catch null;
     }
 
-    pub fn blockCurrentProcess(self: *Self) void {
+    pub fn blockCurrentProcess(self: *Self) !void {
         const p = self.current_process orelse return;
-        for (&self.blocked) |*bp| {
-            if (bp.* == null) {
-                bp.* = .{ .p = p, .ellapsed_ms = 0 };
-                self.current_process = null;
-                return;
-            }
-        }
-        unreachable;
+
+        const blocked = try self.arena.allocator().create(Process.BlockedProcess);
+        blocked.init(p);
+        try self.blocked_queue.enqueue(blocked);
+
+        self.current_process = null;
     }
 
     pub fn isComplete(self: Self) bool {
