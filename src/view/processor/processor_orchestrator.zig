@@ -113,8 +113,8 @@ pub const ProcessorOrchestratorWidget = struct {
         const currentProcessPanelChild = mainContainer.child(.{ .x_off = panelWidth + 1, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
         try self.currentProcessPanel.draw(currentProcessPanelChild);
 
-        // const completedProcessesPanelChild = mainContainer.child(.{ .x_off = panelWidth * 2 + 1, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
-        // try self.completedProcessesPanel.draw(completedProcessesPanelChild);
+        const completedProcessesPanelChild = mainContainer.child(.{ .x_off = panelWidth * 2 + 1, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
+        try self.completedProcessesPanel.draw(completedProcessesPanelChild);
     }
     fn drawFooter(self: *ProcessorOrchestratorWidget, win: Window) !void {
         if (self.ctx.isComplete()) try self.footer.showCompletedControls();

@@ -55,29 +55,15 @@ pub const CompletedProcessesWidget = struct {
     }
 
     pub fn draw(self: *CompletedProcessesWidget, win: Window) !void {
-        const alloc = self.arena.allocator();
-
-        const completed = self.ctx.finished_queue.length();
-
-        const plural_S = if (completed == 1) "" else "s";
-        const msg: []const u8 = if (self.ctx.isComplete()) "Todos los procesos terminados" else try std.fmt.allocPrint(alloc, "{d} proceso{s} terminado{s}", .{ completed, plural_S, plural_S });
-        try self.title.changeText(msg);
+        try self.updateCards();
 
         const titleWidth = usize_to(u16, self.title.getWidth());
         const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
         self.title.draw(titleChild);
 
         var y_off: u16 = 1;
-        for (self.cardOffset..self.ctx.process_count) |i| {
-            const card = &self.cards[i];
-
-            const process = try self.ctx.finished_queue.get(i);
-            if (!process.isDone()) {
-                card.process = null;
-                continue;
-            }
-
-            try card.updateProcess(process);
+        for (self.cards) |*card| {
+            if (card.process == null) continue;
 
             const width = card.getWidth(win);
             const height = card.getHeight();
@@ -85,6 +71,25 @@ pub const CompletedProcessesWidget = struct {
             card.draw(child);
 
             y_off += height;
+
+            if (y_off > win.height) break;
+        }
+    }
+
+    fn updateCards(self: *CompletedProcessesWidget) !void {
+        const queue = &self.ctx.finished_queue;
+        const len = queue.len;
+
+        const plural_S = if (len == 1) "" else "s";
+        const msg: []const u8 = if (self.ctx.isComplete()) "Todos los procesos terminados" else try std.fmt.allocPrint(self.arena.allocator(), "{d} proceso{s} terminado{s}", .{ len, plural_S, plural_S });
+        try self.title.changeText(msg);
+
+        for (0..len - self.cardOffset) |i| {
+            const p = queue.get(i + self.cardOffset) catch unreachable;
+            try self.cards[i].updateProcess(p);
+        }
+        for (len - self.cardOffset..self.cards.len) |i| {
+            self.cards[i].process = null;
         }
     }
 };
