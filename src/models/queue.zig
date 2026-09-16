@@ -6,6 +6,7 @@ pub fn Queue(comptime T: type) type {
 
         arena: std.heap.ArenaAllocator,
         header: *UndirectedNode(T),
+        len: usize,
 
         pub fn init(extern_alloc: std.mem.Allocator) !Self {
             var arena = std.heap.ArenaAllocator.init(extern_alloc);
@@ -16,6 +17,7 @@ pub fn Queue(comptime T: type) type {
             return Self{
                 .arena = arena,
                 .header = header,
+                .len = 0,
             };
         }
         pub fn deinit(self: Self) void {
@@ -24,15 +26,6 @@ pub fn Queue(comptime T: type) type {
 
         pub fn isEmpty(self: Self) bool {
             return self.header.next == self.header;
-        }
-        pub fn length(self: Self) usize {
-            var i: usize = 0;
-            var curr = self.header.next;
-            while (curr != self.header) {
-                i += 1;
-                curr = curr.next;
-            }
-            return i;
         }
         pub fn get(self: Self, i: usize) !*T {
             var curr = self.header;
@@ -52,6 +45,8 @@ pub fn Queue(comptime T: type) type {
 
             new.next = self.header;
             self.header.prev = new;
+
+            self.len += 1;
         }
         pub fn dequeue(self: *Self) !*T {
             if (self.isEmpty()) return error.UnderFlow;
@@ -61,6 +56,8 @@ pub fn Queue(comptime T: type) type {
 
             self.header.next = self.header.next.next;
             self.header.next.prev = self.header;
+
+            self.len -= 1;
 
             return p;
         }

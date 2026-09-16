@@ -82,7 +82,7 @@ pub const ExecutionContext = struct {
         return i;
     }
     fn countProcessesInMemory(self: Self) usize {
-        return self.ready_queue.length() + self.countBlockedProcesses();
+        return self.ready_queue.len + self.countBlockedProcesses();
     }
     fn fillConcurrentProcesses(self: *Self, now: zeit.Instant) !void {
         var count = self.countProcessesInMemory();
@@ -150,7 +150,7 @@ pub const ExecutionContext = struct {
     }
 
     pub fn isComplete(self: Self) bool {
-        return self.finished_queue.length() == self.process_count;
+        return self.finished_queue.len == self.process_count;
     }
 };
 

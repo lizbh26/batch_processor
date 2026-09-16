@@ -65,7 +65,7 @@ pub const PendingProcessesWidget = struct {
     }
     fn updateReadyCards(self: *Self) !void {
         const queue = &self.ctx.ready_queue;
-        const len = queue.length();
+        const len = queue.len;
 
         for (0..len) |i| {
             const p = queue.get(i) catch unreachable;
@@ -88,7 +88,7 @@ pub const PendingProcessesWidget = struct {
         }
     }
     fn drawReadyQueue(self: *Self, win: Window, alloc: std.mem.Allocator) !u16 {
-        const len = self.ctx.ready_queue.length();
+        const len = self.ctx.ready_queue.len;
 
         const plural_S = if (len == 1) "" else "s";
         const msg: []const u8 = if (len == 0) "Sin procesos listos" else try std.fmt.allocPrint(alloc, "{d} proceso{s} listo{s} en espera", .{ len, plural_S, plural_S });

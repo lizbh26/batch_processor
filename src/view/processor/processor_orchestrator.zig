@@ -98,7 +98,7 @@ pub const ProcessorOrchestratorWidget = struct {
     }
 
     fn drawHeader(self: *ProcessorOrchestratorWidget, win: Window) !void {
-        try self.header.setQueuedNewProcessesLabel(self.ctx.new_queue.length());
+        try self.header.setQueuedNewProcessesLabel(self.ctx.new_queue.len);
 
         const headerContainer = win.child(.{ .x_off = 0, .y_off = 0, .width = win.width, .height = HEADER_WIDTH, .border = .{ .where = .bottom, .style = .{ .fg = .{ .index = 255 } } } });
         try self.header.draw(headerContainer);
