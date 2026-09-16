@@ -4,7 +4,7 @@ const zeit = @import("zeit");
 const Operation = @import("operation.zig");
 
 pub const Process = struct {
-    id: usize,
+    id: []const u8,
 
     operation: Operation.Operation,
     tme_ms: i128,
@@ -14,8 +14,8 @@ pub const Process = struct {
     starting_time: ?zeit.Instant,
     finalization_time: zeit.Instant,
 
-    pub fn seed(self: *Process, random: std.Random, data: struct { id: usize }) void {
-        self.id = data.id;
+    pub fn seed(self: *Process, random: std.Random, alloc: std.mem.Allocator, data: struct { id: usize }) !void {
+        self.id = try std.fmt.allocPrint(alloc, "{d}", .{data.id});
         self.operation.seed(random);
 
         self.tme_ms = random.intRangeAtMost(i128, 5, 20) * 1000;

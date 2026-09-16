@@ -8,7 +8,7 @@ const usize_to = @import("../utils/index.zig").usize_to;
 
 pub const MAX_PROCESSES_IN_MEMORY = 5;
 
-var NULL_PROCESS: Process.Process = .{ .id = 0, .arrival_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .finalization_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .operation = .{ .a = 0, .b = 0, .operand = .sum, .result = null }, .starting_time = null, .tme_ms = 1, .tt_ms = 0 };
+var NULL_PROCESS: Process.Process = .{ .id = "NULO", .arrival_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .finalization_time = zeit.instant(.{ .unix_nano = 0 }, &zeit.utc), .operation = .{ .a = 0, .b = 0, .operand = .sum, .result = null }, .starting_time = null, .tme_ms = 1, .tt_ms = 0 };
 
 pub const ExecutionContext = struct {
     const Self = @This();
@@ -49,7 +49,7 @@ pub const ExecutionContext = struct {
         const processes = try alloc.alloc(Process.Process, pCount);
 
         for (processes, 0..) |*p, i| {
-            p.seed(random, .{ .id = i + 1 });
+            try p.seed(random, alloc, .{ .id = i + 1 });
             self.new_queue.enqueue(p) catch unreachable;
         }
     }
@@ -117,10 +117,7 @@ pub const ExecutionContext = struct {
     }
 
     pub fn getCurrentProcess(self: *Self) *Process.Process {
-        return self.current_process orelse {
-            NULL_PROCESS.tt_ms = 0;
-            return &NULL_PROCESS;
-        };
+        return self.current_process orelse &NULL_PROCESS;
     }
     pub fn completeCurrentProcess(self: *Self, now: zeit.Instant) !void {
         if (self.current_process == null) return error.InvalidAccess;

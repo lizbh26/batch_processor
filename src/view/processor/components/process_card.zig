@@ -45,7 +45,7 @@ pub const ProcessCard = struct {
         const alloc = self.arena.allocator();
         self.process = process;
 
-        try self.idLabel.changeText(try std.fmt.allocPrint(alloc, "ID: {d}", .{process.id}));
+        try self.idLabel.changeText(try std.fmt.allocPrint(alloc, "ID: {s}", .{process.id}));
         try self.opLabel.changeText(try std.mem.concat(alloc, u8, &.{ "OP: ", try process.operation.toString(alloc, self.type == .completed) }));
 
         const time_estimated = @divTrunc(process.tme_ms, 1000);
