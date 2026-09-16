@@ -1,64 +1,88 @@
-const std = @import("std.zig");
+const std = @import("std");
 
-pub fn SimpleQueue(comptime T: type) type {
+pub fn Queue(comptime T: type) type {
     return struct {
         const Self = @This();
 
-        alloc: std.mem.Allocator,
+        arena: std.heap.ArenaAllocator,
+        header: *UndirectedNode(T),
 
-        items: []T,
-        size: usize,
+        pub fn init(extern_alloc: std.mem.Allocator) !Self {
+            var arena = std.heap.ArenaAllocator.init(extern_alloc);
 
-        front: usize,
-        end: usize,
+            const header = try arena.allocator().create(UndirectedNode(T));
+            header.init(null);
 
-        fn getNextNumber(self: Self, n: usize) usize {
-            if (n == self.size - 1) return 0 else return n + 1;
-        }
-        fn getPrevNumber(self: Self, n: usize) usize {
-            return (if (n == 0) self.size else n) - 1;
-        }
-
-        pub fn init(alloc: std.mem.Allocator, size: usize) !Self {
             return Self{
-                .alloc = alloc,
-                .items = try alloc.alloc(T, size),
-                .size = size,
-                .front = 0,
-                .end = size - 1,
+                .arena = arena,
+                .header = header,
             };
         }
         pub fn deinit(self: Self) void {
-            self.alloc.free(self.items);
+            self.arena.deinit();
         }
 
         pub fn isEmpty(self: Self) bool {
-            return self.front == self.end + 1 or (self.front == 0 and self.end == self.size - 1);
-        }
-        pub fn isFull(self: Self) bool {
-            return self.front == self.end + 2 or (self.front == 0 and self.end == self.size - 2) or (self.front == 1 and self.end == self.size - 1);
+            return self.header.next == self.header;
         }
         pub fn length(self: Self) usize {
-            if (self.isEmpty()) return 0;
-            if (self.isFull()) return self.size;
-            if (self.front < self.end) return self.end - self.front + 1;
-            return (self.end + 1) + (self.size - self.front);
+            var i: usize = 0;
+            var curr = self.header.next;
+            while (curr != self.header) {
+                i += 1;
+                curr = curr.next;
+            }
+            return i;
+        }
+        pub fn get(self: Self, i: usize) !*T {
+            var curr = self.header;
+            for (0..i + 1) |_| {
+                curr = curr.next;
+                if (curr == self.header) return error.OverFlow;
+            }
+            return curr.data.?;
         }
 
-        pub fn enqueue(self: *Self, item: T) !void {
-            if (self.isFull()) return error.OverFlow;
-            self.end = self.getNextNumber(self.end);
-            self.items[self.end] = item;
+        pub fn enqueue(self: *Self, item: *T) !void {
+            const new = try self.arena.allocator().create(UndirectedNode(T));
+            new.init(item);
+
+            self.header.prev.next = new;
+            new.prev = self.header.prev;
+
+            new.next = self.header;
+            self.header.prev = new;
         }
-        pub fn dequeue(self: *Self) !T {
+        pub fn dequeue(self: *Self) !*T {
             if (self.isEmpty()) return error.UnderFlow;
-            const prev = self.front;
-            self.front = self.getNextNumber(prev);
-            return self.items[prev];
+
+            const p = self.header.next.data orelse return error.InvalidIndex;
+            self.arena.allocator().destroy(self.header.next);
+
+            self.header.next = self.header.next.next;
+            self.header.next.prev = self.header;
+
+            return p;
         }
-        pub fn peek(self: Self) !T {
+        pub fn peek(self: Self) !*T {
             if (self.isEmpty()) return error.UnderFlow;
-            return self.items[self.front];
+            return self.header.next.data.?;
+        }
+    };
+}
+
+fn UndirectedNode(comptime T: type) type {
+    return struct {
+        const Self = @This();
+
+        prev: *Self,
+        next: *Self,
+        data: ?*T,
+
+        pub fn init(self: *Self, data: ?*T) void {
+            self.next = self;
+            self.prev = self;
+            self.data = data;
         }
     };
 }
