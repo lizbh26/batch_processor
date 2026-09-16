@@ -2,73 +2,119 @@ const std = @import("std");
 const vaxis = @import("vaxis");
 const Arena = std.heap.ArenaAllocator;
 
-const Process = @import("~").models.Process.Process;
+const Process = @import("~").models.Process;
 const Context = @import("~").models.Context;
 
 const Window = vaxis.Window;
 const ProcessCardWidget = @import("components/process_card.zig").ProcessCard;
+const BlockedProcessCardWidget = @import("components/blocked_process_card.zig").BlockedProcessCard;
 const Label = @import("../components/label.zig").LabelWidget;
 
 const usize_to = @import("~").utils.usize_to;
 
-const MAX_CARDS_TO_SHOW = Context.MAX_PROCESSES_IN_MEMORY - 1;
+const MAX_CARDS_TO_SHOW = Context.MAX_PROCESSES_IN_MEMORY;
 pub const PendingProcessesWidget = struct {
+    const Self = @This();
+
     arena: Arena,
     ctx: *Context.ExecutionContext,
 
-    title: Label,
-    cards: [MAX_CARDS_TO_SHOW]ProcessCardWidget,
+    ready_title: Label,
+    ready_cards: [MAX_CARDS_TO_SHOW]ProcessCardWidget,
+
+    blocked_title: Label,
+    blocked_cards: [MAX_CARDS_TO_SHOW]BlockedProcessCardWidget,
 
     pub fn init(self: *PendingProcessesWidget, extern_alloc: std.mem.Allocator, ctx: *Context.ExecutionContext) void {
-        self.arena = Arena.init(extern_alloc);
         self.ctx = ctx;
 
+        self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
-        self.title.init(alloc);
-        for (0..self.cards.len) |i| {
-            self.cards[i].init(alloc, .pending);
+
+        self.ready_title.init(alloc);
+        for (&self.ready_cards) |*card| {
+            card.init(alloc, .pending);
+        }
+
+        self.blocked_title.init(alloc);
+        for (&self.blocked_cards) |*card| {
+            card.init(alloc);
         }
     }
 
-    pub fn deinit(self: *PendingProcessesWidget, alloc: std.mem.Allocator) void {
-        for (self.cards) |*card| {
+    pub fn deinit(self: *PendingProcessesWidget) void {
+        const alloc = self.arena.allocator();
+        for (&self.ready_cards) |*card| {
+            card.deinit(alloc);
+        }
+        for (&self.blocked_cards) |card| {
             card.deinit(alloc);
         }
         self.arena.deinit();
     }
 
-    fn getPending(self: *PendingProcessesWidget, processes: *[MAX_CARDS_TO_SHOW]?*Process) !void {
-        if (self.ctx.isComplete()) return;
+    pub fn draw(self: *PendingProcessesWidget, win: Window) !void {
+        try self.updateReadyCards();
+        try self.updateBlockedCards();
 
-        const queue = self.ctx.ready_queue;
+        const alloc = self.arena.allocator();
+        const height = try self.drawReadyQueue(win, alloc);
+
+        const blockedContainer = win.child(.{ .y_off = height + 2 });
+        try self.drawBlockedList(blockedContainer, alloc);
+    }
+    fn updateReadyCards(self: *Self) !void {
+        const queue = &self.ctx.ready_queue;
         const len = queue.length();
 
-        for (1..len) |i| {
-            const p = self.ctx.ready_queue.get(i) catch unreachable;
-            processes[i] = p;
+        for (0..len) |i| {
+            const p = queue.get(i) catch unreachable;
+            try self.ready_cards[i].updateProcess(p);
         }
         for (len..MAX_CARDS_TO_SHOW) |i| {
-            processes[i] = null;
+            self.ready_cards[i].process = null;
         }
     }
+    fn updateBlockedCards(self: *Self) !void {
+        const list = &self.ctx.blocked;
 
-    pub fn draw(self: *PendingProcessesWidget, win: Window) !void {
-        const alloc = self.arena.allocator();
+        for (0..list.len) |i| {
+            const card = &self.blocked_cards[i];
+            const bp: *Process.BlockedProcess = &(list[i] orelse {
+                card.blocked_process = null;
+                continue;
+            });
+            try card.updateBlockedProcess(bp);
+        }
+    }
+    fn drawReadyQueue(self: *Self, win: Window, alloc: std.mem.Allocator) !u16 {
+        const len = self.ctx.ready_queue.length();
 
-        var processes: [MAX_CARDS_TO_SHOW]?*Process = [_]?*Process{null} ** MAX_CARDS_TO_SHOW;
-        try self.getPending(&processes);
+        const plural_S = if (len == 1) "" else "s";
+        const msg: []const u8 = if (len == 0) "Sin procesos listos" else try std.fmt.allocPrint(alloc, "{d} proceso{s} listo{s} en espera", .{ len, plural_S, plural_S });
+        try self.ready_title.changeText(msg);
 
+        const titleWidth = usize_to(u16, self.ready_title.getWidth());
+        const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
+        self.ready_title.draw(titleChild);
+
+        var y_off: u16 = 1;
+        for (&self.ready_cards) |*card| {
+            if (card.process == null) continue;
+
+            const height = card.getHeight();
+            const child = win.child(.{ .x_off = @divTrunc(win.width - card.getWidth(win), 2), .y_off = y_off, .width = win.width, .height = height });
+            card.draw(child);
+            y_off += height;
+        }
+
+        return y_off;
+    }
+    fn drawBlockedList(self: *Self, win: Window, alloc: std.mem.Allocator) !void {
         var n: u16 = 0;
         var y_off: u16 = 1;
-        for (processes, 0..) |process, i| {
-            const card = &self.cards[i];
-
-            const p = process orelse {
-                card.process = null;
-                continue;
-            };
-
-            try card.updateProcess(p);
+        for (&self.blocked_cards) |*card| {
+            if (card.blocked_process == null) continue;
             n += 1;
 
             const height = card.getHeight();
@@ -78,11 +124,11 @@ pub const PendingProcessesWidget = struct {
         }
 
         const plural_S = if (n == 1) "" else "s";
-        const msg: []const u8 = if (n == 0) "Sin procesos pendientes" else try std.fmt.allocPrint(alloc, "{d} proceso{s} pendiente{s} en el lote", .{ n, plural_S, plural_S });
-        try self.title.changeText(msg);
+        const msg: []const u8 = if (n == 0) "Sin procesos bloqueados" else try std.fmt.allocPrint(alloc, "{d} proceso{s} bloqueado{s}", .{ n, plural_S, plural_S });
+        try self.blocked_title.changeText(msg);
 
-        const titleWidth = usize_to(u16, self.title.getWidth());
+        const titleWidth = usize_to(u16, self.blocked_title.getWidth());
         const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
-        self.title.draw(titleChild);
+        self.blocked_title.draw(titleChild);
     }
 };

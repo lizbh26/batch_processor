@@ -107,8 +107,8 @@ pub const ProcessorOrchestratorWidget = struct {
         const panelWidth = @divFloor(win.width, 3);
         const mainContainer = win.child(.{ .x_off = 0, .y_off = HEADER_WIDTH + 1, .width = win.width, .height = win.height - HEADER_WIDTH - 1 - FOOTER_WIDTH });
 
-        // const pendingProcessesPanelChild = mainContainer.child(.{ .x_off = 0, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
-        // try self.pendingProcessesPanel.draw(pendingProcessesPanelChild);
+        const pendingProcessesPanelChild = mainContainer.child(.{ .x_off = 0, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
+        try self.pendingProcessesPanel.draw(pendingProcessesPanelChild);
 
         const currentProcessPanelChild = mainContainer.child(.{ .x_off = panelWidth + 1, .y_off = 0, .width = panelWidth, .height = mainContainer.height });
         try self.currentProcessPanel.draw(currentProcessPanelChild);
