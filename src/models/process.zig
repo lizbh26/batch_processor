@@ -35,7 +35,7 @@ pub const Process = struct {
 
         self.arrival_time_ms = 0;
         self.response_time_ms = null;
-        self.finalization_time_ms = 0;
+        self.finalization_time_ms = -1;
     }
 
     pub fn isDone(self: *const Process) bool {
@@ -50,7 +50,8 @@ pub const Process = struct {
 
     // Tiempo de espera
     pub fn getWaitTimeMs(self: *const Process, total_ellapsed_ms: i128) i128 {
-        return @max(total_ellapsed_ms - self.service_time_ms - self.arrival_time_ms, 0);
+        const end = if (self.finalization_time_ms < 0) total_ellapsed_ms else self.finalization_time_ms;
+        return @max(end - self.service_time_ms - self.arrival_time_ms, 0);
     }
 };
 
