@@ -77,7 +77,6 @@ pub const ProcessorOrchestratorWidget = struct {
 
     pub fn kickstart(self: *ProcessorOrchestratorWidget) !void {
         try self.completedProcessesPanel.kickstart();
-        try self.contextOverviewWidget.kickstart();
     }
 
     pub fn tick(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {

@@ -31,6 +31,7 @@ pub const ContextOverviewWidget = struct {
         self.title.init(alloc);
         self.title.changeText("Resumen del estado del simulador") catch unreachable;
         self.offset = 0;
+        self.strips = &.{};
     }
 
     pub fn deinit(self: *Self, alloc: std.mem.Allocator) void {
@@ -38,15 +39,6 @@ pub const ContextOverviewWidget = struct {
             strip.deinit(alloc);
         }
         self.arena.deinit();
-    }
-
-    pub fn kickstart(self: *Self) !void {
-        const alloc = self.arena.allocator();
-        self.strips = try alloc.alloc(ProcessStripWidget, self.ctx.process_count);
-
-        for (self.strips) |*strip| {
-            strip.init(alloc);
-        }
     }
 
     pub fn handleInput(self: *Self, key: vaxis.Key) void {
@@ -58,10 +50,35 @@ pub const ContextOverviewWidget = struct {
     }
 
     pub fn update(self: *Self) !void {
+        const alloc = self.arena.allocator();
+        alloc.free(self.strips);
+        self.strips = try alloc.alloc(ProcessStripWidget, self.ctx.process_count);
+
         var strip_idx: usize = 0;
+        for (0..self.ctx.new_queue.len) |i| {
+            const p = self.ctx.new_queue.get(i) catch break;
+            try self.strips[strip_idx].init(alloc, .{ .p = p, .stage = .new, .total_ellapsed_ms = self.ctx.time_ellapsed_ms });
+            strip_idx += 1;
+        }
+        for (0..self.ctx.ready_queue.len) |i| {
+            const p = self.ctx.ready_queue.get(i) catch break;
+            try self.strips[strip_idx].init(alloc, .{ .p = p, .stage = .ready, .total_ellapsed_ms = self.ctx.time_ellapsed_ms });
+            strip_idx += 1;
+        }
+        for (0..self.ctx.blocked_queue.len) |i| {
+            const bp = self.ctx.blocked_queue.get(i) catch break;
+            try self.strips[strip_idx].init(alloc, .{ .p = bp.p, .stage = .blocked, .total_ellapsed_ms = self.ctx.time_ellapsed_ms, .blocked_ms = bp.ellapsed_ms });
+            strip_idx += 1;
+        }
+
+        if (self.ctx.current_process) |curr| {
+            try self.strips[strip_idx].init(alloc, .{ .p = curr, .stage = .executing, .total_ellapsed_ms = self.ctx.time_ellapsed_ms });
+            strip_idx += 1;
+        }
+
         for (0..self.ctx.finished_queue.len) |i| {
             const p = self.ctx.finished_queue.get(i) catch break;
-            try self.strips[strip_idx].update(p, .finalized);
+            try self.strips[strip_idx].init(alloc, .{ .p = p, .stage = .finalized, .total_ellapsed_ms = self.ctx.time_ellapsed_ms });
             strip_idx += 1;
         }
     }

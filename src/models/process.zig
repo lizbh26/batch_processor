@@ -49,10 +49,8 @@ pub const Process = struct {
     }
 
     // Tiempo de espera
-    pub fn getWaitTimeMs(self: *const Process) !i128 {
-        const return_time = try self.getReturnTimeMs();
-        if (return_time <= self.service_time_ms) return error.InvalidAccess;
-        return return_time - self.service_time_ms;
+    pub fn getWaitTimeMs(self: *const Process, total_ellapsed_ms: i128) i128 {
+        return @max(total_ellapsed_ms - self.service_time_ms - self.arrival_time_ms, 0);
     }
 };
 
