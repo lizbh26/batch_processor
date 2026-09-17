@@ -99,6 +99,7 @@ pub const Controller = struct {
                 .winsize => |ws| {
                     try self.vx.resize(self.arena.allocator(), self.tty.writer(), ws);
                     self.vx.refresh = true;
+                    self.orchestrator.handleWindowResize(ws);
                 },
                 else => {},
             }

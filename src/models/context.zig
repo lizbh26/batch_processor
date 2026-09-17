@@ -26,11 +26,14 @@ pub const ExecutionContext = struct {
     prev_tick: ?zeit.Instant,
     time_ellapsed_ms: i128,
 
+    window_dimensions: struct { w: u16, h: u16 },
+
     pub fn init(self: *Self, extern_alloc: std.mem.Allocator) void {
         self.arena = std.heap.ArenaAllocator.init(extern_alloc);
         self.process_count = 0;
         self.prev_tick = null;
         self.time_ellapsed_ms = 0;
+        self.window_dimensions = .{ .w = 0, .h = 0 };
     }
     pub fn deinit(self: *Self) void {
         self.arena.deinit();
