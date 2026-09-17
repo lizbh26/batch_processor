@@ -29,7 +29,7 @@ pub const ContextOverviewWidget = struct {
         self.ctx = ctx;
 
         self.title.init(alloc);
-        self.title.changeText("Vista resumida") catch unreachable;
+        self.title.changeText("Resumen del estado del simulador") catch unreachable;
         self.offset = 0;
     }
 

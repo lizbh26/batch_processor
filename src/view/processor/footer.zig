@@ -19,7 +19,7 @@ pub const FooterWidget = struct {
         self.showRunningControls() catch unreachable;
 
         self.scrollControls.init(alloc);
-        self.scrollControls.changeText("🠝/🠟 - Navegar completados") catch unreachable;
+        self.scrollControls.changeText("🠝/🠟 - Navegar  ") catch unreachable;
     }
 
     pub fn showRunningControls(self: *FooterWidget) !void {
