@@ -7,8 +7,8 @@ const Event = union(enum) { key_press: vaxis.Key, winsize: vaxis.Winsize, focus_
 
 const MainOrchestrator = @import("view/main_orchestrator.zig").MainOrchestrator;
 
-pub const MIN_SCREEN_WIDTH = 120;
-pub const MIN_SCREEN_HEIGHT = 25;
+pub const MIN_SCREEN_WIDTH = 125;
+pub const MIN_SCREEN_HEIGHT = 30;
 
 const FRAME_DURATION: zeit.Duration = .{ .microseconds = 16667 }; //60 FPS or 16 ms per frame
 
