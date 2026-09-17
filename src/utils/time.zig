@@ -1,9 +1,9 @@
 const std = @import("std");
 const zeit = @import("zeit");
 
-const leftpad = @import("leftpad.zig");
+const leftpad = @import("leftpad.zig").leftpad;
 
-fn time_to_string(alloc: std.mem.Allocator, diff: zeit.Time) ![]const u8 {
+pub fn time_to_string(alloc: std.mem.Allocator, diff: zeit.Time) ![]const u8 {
     //IMPORTANT: if simulation goes beyond a day, this will loop back around.
     var localArena = std.heap.ArenaAllocator.init(alloc);
     defer localArena.deinit();

@@ -48,8 +48,8 @@ pub const ProcessCard = struct {
         try self.idLabel.changeText(try std.fmt.allocPrint(alloc, "ID: {s}", .{process.id}));
         try self.opLabel.changeText(try std.mem.concat(alloc, u8, &.{ "OP: ", try process.operation.toString(alloc, self.type == .completed) }));
 
-        const time_estimated = @divTrunc(process.tme_ms, 1000);
-        const time_taken = @divTrunc(process.tt_ms, 1000);
+        const time_estimated = @divTrunc(process.estimated_time_ms, 1000);
+        const time_taken = @divTrunc(process.service_time_ms, 1000);
         const time_remaining = time_estimated - time_taken;
         try self.timeLabel.changeText(try std.fmt.allocPrint(alloc, "TME: {d}  TT: {d}  TR: {d}", .{ time_estimated, time_taken, time_remaining }));
     }

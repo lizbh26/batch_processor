@@ -30,7 +30,6 @@ pub const ProcessorOrchestratorWidget = struct {
     footer: Footer,
 
     running: bool,
-    should_fail_current: bool,
 
     pub fn init(self: *ProcessorOrchestratorWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
@@ -38,7 +37,6 @@ pub const ProcessorOrchestratorWidget = struct {
 
         self.ctx = ctx;
         self.running = true;
-        self.should_fail_current = false;
 
         self.header.init(alloc, self.ctx);
         self.pendingProcessesPanel.init(alloc, self.ctx);
@@ -57,7 +55,7 @@ pub const ProcessorOrchestratorWidget = struct {
                 if (key.matches('e', .{})) {
                     try self.ctx.blockCurrentProcess();
                 } else if (key.matches('w', .{})) {
-                    self.should_fail_current = true;
+                    try self.ctx.failCurrentProcess();
                 } else if (key.matches('p', .{})) {
                     try self.stop();
                 }
@@ -74,10 +72,6 @@ pub const ProcessorOrchestratorWidget = struct {
 
     pub fn tick(self: *ProcessorOrchestratorWidget, now: zeit.Instant) !void {
         if (!self.running) return;
-        if (self.should_fail_current) {
-            try self.ctx.failCurrentProcess(now);
-            self.should_fail_current = false;
-        }
         try self.ctx.tick(now);
     }
     fn restart(self: *ProcessorOrchestratorWidget) !void {

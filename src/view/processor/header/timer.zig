@@ -33,7 +33,7 @@ pub const TimerWidget = struct {
         return usize_to(u16, self.label.getWidth());
     }
     pub fn draw(self: *TimerWidget, win: Window) !void {
-        const diff = zeit.instant(.{ .unix_nano = self.ctx.time_ellapsed_nano }, &zeit.utc).time();
+        const diff = zeit.instant(.{ .unix_nano = self.ctx.time_ellapsed_ms * 1000000 }, &zeit.utc).time();
         try self.label.changeText(try time_to_string(self.alloc, diff));
         self.label.draw(win);
     }
