@@ -63,9 +63,16 @@ pub const ProcessorOrchestratorWidget = struct {
                     self.ctx.failCurrentProcess();
                 } else if (key.matches('p', .{})) {
                     try self.stop();
+                } else if (key.matches('b', .{})) {
+                    try self.stop();
+                    try self.contextOverviewWidget.update();
+                    self.view = .overview;
+                } else if (key.matches('n', .{})) {
+                    try self.ctx.createProcess();
                 }
             } else if (key.matches('c', .{})) {
                 try self.restart();
+                self.view = .panels;
             }
         }
         if (self.view == .panels) {

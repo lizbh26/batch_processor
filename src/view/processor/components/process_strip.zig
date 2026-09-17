@@ -60,7 +60,7 @@ pub const ProcessStripWidget = struct {
         const wait_time_ms = if (stage == .new) -1 else p.getWaitTimeMs(total_ellapsed_ms);
         const wait_time = if (wait_time_ms < 0) "N/A" else try time.time_to_string(alloc, time.milliseconds_to_time(wait_time_ms));
 
-        const finalization_time = if (p.finalization_time_ms == 0) "N/A" else try time.time_to_string(alloc, time.milliseconds_to_time(p.finalization_time_ms));
+        const finalization_time = if (p.finalization_time_ms < 0) "N/A" else try time.time_to_string(alloc, time.milliseconds_to_time(p.finalization_time_ms));
 
         var time_str = try std.fmt.allocPrint(alloc, "  T.Lle: {s}  T.Fin: {s}  T.Res: {s}  T.Ser: {s}  T.Esp: {s}  T.Ret: {s}  ", .{ arrival_time, finalization_time, response_time, service_time, wait_time, return_time });
 

@@ -23,7 +23,7 @@ pub const FooterWidget = struct {
     }
 
     pub fn showRunningControls(self: *FooterWidget) !void {
-        try self.stateControls.changeText("P - Pausar simulación    E - Bloquear proceso    W - Fallar proceso    Ctrl+C - Salir");
+        try self.stateControls.changeText("P - Pausar simulación    E - Bloquear proceso    W - Fallar proceso    N - Nuevo proceso    B - Tabla BCP    Ctrl+C - Salir");
     }
     pub fn showPausedControls(self: *FooterWidget) !void {
         try self.stateControls.changeText("Simulación pausada    C - Continuar");
