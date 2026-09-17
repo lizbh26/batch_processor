@@ -71,7 +71,7 @@ pub const ContextOverviewWidget = struct {
         const titleChild = win.child(.{ .x_off = @divTrunc(win.width - titleWidth, 2), .y_off = 0, .width = titleWidth, .height = 1 });
         self.title.draw(titleChild);
 
-        const stripsContainer = win.child(.{ .x_off = 2, .y_off = 2, .width = win.width - 2, .height = win.height - 2 });
+        const stripsContainer = win.child(.{ .y_off = 2, .height = win.height - 2 });
         var y_off: u16 = 0;
         for (self.offset..self.strips.len) |i| {
             const strip = &self.strips[i];
@@ -81,7 +81,7 @@ pub const ContextOverviewWidget = struct {
             const child = stripsContainer.child(.{ .y_off = y_off, .height = height });
             strip.draw(child);
 
-            y_off += height;
+            y_off += height + 1;
 
             if (y_off > win.height) break;
         }

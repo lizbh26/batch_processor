@@ -14,7 +14,7 @@ const Label = @import("../../components/label.zig").LabelWidget;
 const usize_to = @import("~").utils.usize_to;
 const time = @import("~").utils.time;
 
-const MIN_OP_WIDTH = 40;
+const MAX_OP_PADDED_WIDTH = 40;
 
 pub const ProcessStripWidget = struct {
     const Self = @This();
@@ -71,9 +71,11 @@ pub const ProcessStripWidget = struct {
     }
 
     pub fn getDimensions(self: *Self, win: Window) struct { id: u16, op: u16, time: u16, total: u16, rows: u16 } {
-        const idWidth = @min(usize_to(u16, self.idLabel.getWidth()), win.width);
-        const opWidth = @max(usize_to(u16, self.opLabel.getWidth()), MIN_OP_WIDTH);
         const timeWidth = @min(usize_to(u16, self.timeLabel.getWidth()), win.width);
+        const idWidth = @min(usize_to(u16, self.idLabel.getWidth()), win.width);
+
+        const remaining = if (win.width - timeWidth > idWidth) win.width - timeWidth - idWidth else 0;
+        const opWidth = @max(@min(usize_to(u16, self.opLabel.getWidth()), win.width), @min(MAX_OP_PADDED_WIDTH, remaining));
 
         var totalWidth = idWidth + opWidth;
         var rows: u16 = 1;
@@ -85,7 +87,7 @@ pub const ProcessStripWidget = struct {
             totalWidth = @max(totalWidth, timeWidth);
             rows = 2;
         } else {
-            totalWidth += totalWidth;
+            totalWidth += timeWidth;
         }
 
         return .{ .id = idWidth, .op = opWidth, .time = timeWidth, .total = totalWidth, .rows = rows };
