@@ -98,7 +98,7 @@ pub const ExecutionContext = struct {
         }
         const p = self.current_process.?;
 
-        if (p.response_time_ms == null) p.response_time_ms = self.time_ellapsed_ms else p.service_time_ms += delta_ms;
+        if (p.response_time_ms == null) p.response_time_ms = self.time_ellapsed_ms - p.arrival_time_ms else p.service_time_ms += delta_ms;
         if (p.isDone()) {
             try self.completeCurrentProcess();
         }
