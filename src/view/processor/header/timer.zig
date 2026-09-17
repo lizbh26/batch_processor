@@ -10,7 +10,7 @@ const Process = @import("~").models.Process.Process;
 const ExecutionContext = @import("~").models.Context.ExecutionContext;
 
 const usize_to = @import("~").utils.usize_to;
-const time_to_string = @import("~").utils.time_to_string;
+const time = @import("~").utils.time;
 
 pub const TimerWidget = struct {
     alloc: std.mem.Allocator,
@@ -33,8 +33,7 @@ pub const TimerWidget = struct {
         return usize_to(u16, self.label.getWidth());
     }
     pub fn draw(self: *TimerWidget, win: Window) !void {
-        const diff = zeit.instant(.{ .unix_nano = self.ctx.time_ellapsed_ms * 1000000 }, &zeit.utc).time();
-        try self.label.changeText(try time_to_string(self.alloc, diff));
+        try self.label.changeText(try time.time_to_string(self.alloc, time.milliseconds_to_time(self.ctx.time_ellapsed_ms)));
         self.label.draw(win);
     }
 };

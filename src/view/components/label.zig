@@ -26,10 +26,10 @@ pub const LabelWidget = struct {
     pub fn isEmpty(self: *LabelWidget) bool {
         return self.getText().len == 0;
     }
-    pub fn getText(self: *LabelWidget) []const u8 {
+    pub fn getText(self: *const LabelWidget) []const u8 {
         return self.buffer.content.items;
     }
-    pub fn getWidth(self: *LabelWidget) usize {
+    pub fn getWidth(self: *const LabelWidget) usize {
         return count_utf8(self.getText()) + 1;
     }
 

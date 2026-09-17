@@ -3,6 +3,10 @@ const zeit = @import("zeit");
 
 const leftpad = @import("leftpad.zig").leftpad;
 
+pub fn milliseconds_to_time(ms: i128) zeit.Time {
+    return zeit.instant(.{ .unix_nano = ms * 1000000 }, &zeit.utc).time();
+}
+
 pub fn time_to_string(alloc: std.mem.Allocator, diff: zeit.Time) ![]const u8 {
     //IMPORTANT: if simulation goes beyond a day, this will loop back around.
     var localArena = std.heap.ArenaAllocator.init(alloc);
