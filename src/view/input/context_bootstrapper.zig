@@ -31,10 +31,10 @@ pub const ContextBootstrapperWidget = struct {
         self.arena.deinit();
     }
 
-    pub fn prepareContext(self: *ContextBootstrapperWidget, random: std.Random, ctx: *ExecutionContext) !void {
+    pub fn prepareContext(self: *ContextBootstrapperWidget, ctx: *ExecutionContext) !void {
         const processCountInput = self.inputList.getInputAt(0);
         const pCount = std.fmt.parseInt(u16, processCountInput, 10) catch unreachable;
-        return try ctx.create(random, pCount);
+        return try ctx.kickstart(pCount);
     }
     pub fn isDone(self: *ContextBootstrapperWidget) bool {
         return self.inputList.isDone();

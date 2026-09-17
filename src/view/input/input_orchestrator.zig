@@ -13,15 +13,13 @@ const ContextBootstrapperWidget = @import("context_bootstrapper.zig").ContextBoo
 pub const InputOrchestratorWidget = struct {
     arena: Arena,
     ctx: *ExecutionContext,
-    random: std.Random,
 
     bootstrap_widget: ContextBootstrapperWidget,
 
-    pub fn init(self: *InputOrchestratorWidget, extern_alloc: std.mem.Allocator, random: std.Random, ctx: *ExecutionContext) void {
+    pub fn init(self: *InputOrchestratorWidget, extern_alloc: std.mem.Allocator, ctx: *ExecutionContext) void {
         self.arena = Arena.init(extern_alloc);
         const alloc = self.arena.allocator();
         self.ctx = ctx;
-        self.random = random;
 
         self.bootstrap_widget.init(alloc);
     }
@@ -35,7 +33,7 @@ pub const InputOrchestratorWidget = struct {
 
     pub fn tick(self: *InputOrchestratorWidget) !void {
         if (self.bootstrap_widget.isDone()) {
-            try self.bootstrap_widget.prepareContext(self.random, self.ctx);
+            try self.bootstrap_widget.prepareContext(self.ctx);
         }
     }
 

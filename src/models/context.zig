@@ -14,6 +14,7 @@ pub const ExecutionContext = struct {
     const Self = @This();
 
     arena: std.heap.ArenaAllocator,
+    random: std.Random,
 
     process_count: usize,
 
@@ -28,8 +29,9 @@ pub const ExecutionContext = struct {
 
     window_dimensions: struct { w: u16, h: u16 },
 
-    pub fn init(self: *Self, extern_alloc: std.mem.Allocator) void {
+    pub fn init(self: *Self, extern_alloc: std.mem.Allocator, random: std.Random) void {
         self.arena = std.heap.ArenaAllocator.init(extern_alloc);
+        self.random = random;
         self.process_count = 0;
         self.prev_tick = null;
         self.time_ellapsed_ms = 0;
@@ -39,22 +41,24 @@ pub const ExecutionContext = struct {
         self.arena.deinit();
     }
 
-    pub fn create(self: *Self, random: std.Random, pCount: usize) !void {
+    pub fn kickstart(self: *Self, pCount: usize) !void {
         const alloc = self.arena.allocator();
-
-        self.process_count = pCount;
         self.new_queue = try .init(alloc);
         self.ready_queue = try .init(alloc);
         self.current_process = null;
         self.blocked_queue = try .init(alloc);
         self.finished_queue = try .init(alloc);
 
-        const processes = try alloc.alloc(Process.Process, pCount);
-
-        for (processes, 0..) |*p, i| {
-            try p.seed(random, alloc, .{ .id = i + 1 });
-            self.new_queue.enqueue(p) catch unreachable;
+        for (0..pCount) |_| {
+            try self.createProcess();
         }
+    }
+    pub fn createProcess(self: *Self) !void {
+        const alloc = self.arena.allocator();
+        const p = try alloc.create(Process.Process);
+        self.process_count += 1;
+        try p.seed(self.random, alloc, .{ .id = self.process_count });
+        try self.new_queue.enqueue(p);
     }
 
     pub fn tick(self: *Self, now: zeit.Instant) !void {
