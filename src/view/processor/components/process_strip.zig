@@ -64,7 +64,7 @@ pub const ProcessStripWidget = struct {
 
             const finalization_time = if (p.finalization_time_ms == 0) "N/A" else try time.time_to_string(alloc, time.milliseconds_to_time(p.finalization_time_ms));
 
-            try self.timeLabel.changeText(try std.fmt.allocPrint(alloc, "  Llegada: {s}  Respuesta: {s}  Servicio: {s}  Espera: {s}  Retorno: {s}  Finalización: {s}  ", .{ arrival_time, response_time, service_time, wait_time, return_time, finalization_time }));
+            try self.timeLabel.changeText(try std.fmt.allocPrint(alloc, "  T.Lle: {s}  T.Fin: {s}  T.Res: {s}  T.Ser: {s}  T.Esp: {s}  T.Ret: {s}  ", .{ arrival_time, finalization_time, response_time, service_time, wait_time, return_time }));
         } else {
             try self.timeLabel.changeText("");
         }
