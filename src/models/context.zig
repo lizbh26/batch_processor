@@ -91,7 +91,7 @@ pub const ExecutionContext = struct {
         }
         const p = self.current_process.?;
 
-        if (p.response_time_ms == 0) p.response_time_ms = self.time_ellapsed_ms else p.service_time_ms += delta_ms;
+        if (p.response_time_ms == null) p.response_time_ms = self.time_ellapsed_ms else p.service_time_ms += delta_ms;
         if (p.isDone()) {
             try self.completeCurrentProcess();
         }
@@ -117,8 +117,9 @@ pub const ExecutionContext = struct {
         self.current_process.?.operation.calculate();
         try self.moveCurrentToFinalized();
     }
-    pub fn failCurrentProcess(self: *Self) !void {
-        try self.moveCurrentToFinalized();
+    pub fn failCurrentProcess(self: *Self) void {
+        if (self.current_process != null)
+            self.moveCurrentToFinalized() catch unreachable;
     }
     fn moveCurrentToFinalized(self: *Self) !void {
         const p = self.current_process orelse return error.InvalidAccess;
